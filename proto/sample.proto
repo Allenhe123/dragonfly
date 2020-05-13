@@ -1,0 +1,53 @@
+syntax = "proto3;
+
+package df.config
+
+graphs {
+  graph_id: 100
+  priority: 1
+  policy: SCHED_RR
+  engines {
+    id: 1000
+    engine_name: "SrcEngine"
+    so_name: "./libSrcEngine.so"
+    thread_num: 1
+    priority: 1
+    policy: SCHED_RR
+  }
+  
+  engines {
+    id: 1001
+    engine_name: "FrameworkerEngine"
+    so_name: "./libFrameworkerEngine.so"
+    side: DEVICE
+    thread_num: 1
+    ai_config{
+        items{
+            name: "model_path"
+            value: "./matrix/resnet18.om"
+        }
+    }
+  }
+
+  engines {
+    id: 1002
+    engine_name: "DestEngine"
+    so_name: "./libDestEngine.so"
+    side: HOST
+    thread_num: 1
+  }
+
+  connects {
+    src_engine_id: 1000
+    src_port_id: 0
+    target_engine_id: 1001
+    target_port_id: 0
+  }
+
+  connects {
+    src_engine_id: 1001
+    src_port_id: 0
+    target_engine_id: 1002
+    target_port_id: 0
+  }
+}
