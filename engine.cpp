@@ -9,6 +9,13 @@
 
 namespace df {
 
+Engine::Engine(int id, int priority, const std::string& policy, 
+               const std::string& affi, const std::vector<int>& cpus, 
+               int threadnum):id_(id), priority_(priority), 
+               policy_(policy), cpu_affi_(affi), thread_num_(threadnum) {
+               cpus_.assign(cpus.begin(), cpus.end());
+}
+
 Engine::~Engine() {
     Stop();
 }

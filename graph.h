@@ -37,11 +37,14 @@ struct CmpFunc
 class Graph
 {
 public:
+    Graph() = default;
+    Graph(int32_t id);
     void Destory();
     void SetFunctor(const EnginePortID& id, FUNCTOR func);
     void SendData(const EnginePortID& id, const Task& t);
 
     std::shared_ptr<Engine> GetEngine(const EnginePortID& id) const noexcept;
+    void AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept;
 
 private:
     uint32_t graphid_ = 0;

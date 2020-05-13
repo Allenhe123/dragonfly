@@ -31,6 +31,8 @@ class Engine
 {
 public:
     Engine() = default;
+    Engine(int id, int priority, const std::string& policy, 
+           const std::string& affi, const std::vector<int>& cpus, int threadnum);
     virtual ~Engine();
     Engine(const Engine&) = delete;
     Engine& operator = (const Engine&) = delete;
@@ -72,8 +74,12 @@ protected:
     Engine* child_ = nullptr;
     bool stop_ = false;
     FUNCTOR functor_;
-    int priority_ = -1;
-    int policy_ = -1;
+    int32_t id_ = -1;
+    int32_t priority_ = -1;
+    std::string policy_;
+    std::string cpu_affi_;
+    std::vector<int32_t> cpus_;
+    int32_t thread_num_ = 1;
     std::atomic<pid_t> tid_{-1};
     std::atomic<bool> running_{false};
 };

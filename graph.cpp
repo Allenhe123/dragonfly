@@ -2,6 +2,9 @@
 
 namespace df {
 
+Graph::Graph(int32_t id): graphid_(id) {
+}
+
 void Graph::Destory() {
     engines_.clear();
 }
@@ -32,6 +35,10 @@ std::shared_ptr<Engine> Graph::GetEngine(const EnginePortID& id) const noexcept 
         return nullptr;
     }
     return ite->second;
+}
+
+void Graph::AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept {
+    engines_[id] = e;
 }
 
 }
