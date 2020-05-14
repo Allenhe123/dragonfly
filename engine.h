@@ -43,23 +43,23 @@ public:
     
     void Push(const Task& data);
 
-    int Core() const;
-    int Priority() noexcept;
-    int Policy() noexcept;
+    const std::vector<int32_t>& Cores() const noexcept;
+    int32_t Priority() const noexcept;
+    const std::string& Policy() const noexcept;
 
-    void SetChild(Engine* ch) noexcept;
-    void SetParent(Engine* pa) noexcept;
-    Engine* Child() const noexcept;
-    Engine* Parent() const noexcept;
+    void SetChild(const std::shared_ptr<Engine>& ch) noexcept;
+    void SetParent(const std::shared_ptr<Engine>& pa) noexcept;
+    const std::shared_ptr<Engine>& Child() const noexcept;
+    const std::shared_ptr<Engine>& Parent() const noexcept;
+    int32_t Id() const noexcept;
 
     void SetFunctor(std::function<Task(const Task&)> f) noexcept;
 
     uint32_t CurrentQueueSize() const noexcept;
     uint32_t MaxQueueSize() const noexcept;
 
-    bool SetSchedAffinity(const std::vector<int>& cpus, const  std::string& affinity, int p);
-    bool SetSchedPolicy(const std::string& policy, int priority);
-    bool SetPolicy(int policy);
+    bool SetSchedAffinity();
+    bool SetSchedPolicy();
 
 protected:
     void Entry();
@@ -70,14 +70,14 @@ protected:
     TaskQueue queue_;
     std::condition_variable cv_;
     std::mutex mutex_;
-    Engine* parent_ = nullptr;
-    Engine* child_ = nullptr;
+    std::shared_ptr<Engine> parent_ = nullptr;
+    std::shared_ptr<Engine> child_ = nullptr;
     bool stop_ = false;
     FUNCTOR functor_;
     int32_t id_ = -1;
     int32_t priority_ = -1;
-    std::string policy_;
-    std::string cpu_affi_;
+    std::string policy_ = "";
+    std::string cpu_affi_ = "";
     std::vector<int32_t> cpus_;
     int32_t thread_num_ = 1;
     std::atomic<pid_t> tid_{-1};

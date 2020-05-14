@@ -21,7 +21,7 @@ Engine::~Engine() {
 }
 
 void Engine::Init() {
-    std::thread t(Entry, this);
+    std::thread t(&Engine::Entry, this);
     thread_ = std::move(t);
     thread_.join();
 }
@@ -64,85 +64,63 @@ void Engine::NotifyAll() {
     cv_.notify_all();
 }
 
-void Engine::SetChild(Engine* ch) noexcept { child_ = ch; }
-void Engine::SetParent(Engine* pa) noexcept { parent_ = pa; }
-Engine* Engine::Child() const noexcept { return child_; }
-Engine* Engine::Parent() const noexcept { return parent_; }
+void Engine::SetChild(const std::shared_ptr<Engine>& ch) noexcept { child_ = ch; }
+void Engine::SetParent(const std::shared_ptr<Engine>& pa) noexcept { parent_ = pa; }
+const std::shared_ptr<Engine>& Engine::Child() const noexcept { return child_; }
+const std::shared_ptr<Engine>& Engine::Parent() const noexcept { return parent_; }
 
-bool Engine::SetPolicy(int policy) {
-    pthread_attr_t attr;
-	int rs = pthread_attr_init(&attr);
-    int rs = pthread_attr_setschedpolicy(&attr, policy);
-
-}
-
-bool Engine::SetSchedAffinity(const std::vector<int>& cpus, const  std::string& affinity, int p) {
+bool Engine::SetSchedAffinity() {
+    if (cpu_affi_.empty() || cpus_.empty()) return false;
     cpu_set_t set;
     CPU_ZERO(&set);
-    if (cpus.size()) {
-        if (!affinity.compare("range")) {
-            for (const auto cpu : cpus) {
+    if (cpus_.size()) {
+        if (!cpu_affi_.compare("range")) {
+            for (const auto cpu : cpus_) {
                 CPU_SET(cpu, &set);
             }
             pthread_setaffinity_np(thread_.native_handle(), sizeof(set), &set);
-        } else if (!affinity.compare("1to1")) {
-            CPU_SET(cpus[p], &set);
+        } else if (!cpu_affi_.compare("1to1")) {
+            CPU_SET(cpus_[0], &set);
             pthread_setaffinity_np(thread_.native_handle(), sizeof(set), &set);
     }
   }
+  return true;
 }
 
-bool Engine::SetSchedPolicy(const std::string& spolicy, int priority) {
+bool Engine::SetSchedPolicy() {
+    if (policy_.empty() || priority_ == -1) return false;
     struct sched_param sp;
     int policy;
     memset(reinterpret_cast<void *>(&sp), 0, sizeof(sp));
-    sp.sched_priority = priority;
+    sp.sched_priority = priority_;
 
-    if (!spolicy.compare("SCHED_FIFO")) {
+    if (!policy_.compare("SCHED_FIFO")) {
         policy = SCHED_FIFO;
         pthread_setschedparam(thread_.native_handle(), policy, &sp);
-    } else if (!spolicy.compare("SCHED_RR")) {
+    } else if (!policy_.compare("SCHED_RR")) {
         policy = SCHED_RR;
         pthread_setschedparam(thread_.native_handle(), policy, &sp);
-    } else if (!spolicy.compare("SCHED_OTHER")) {
+    } else if (!policy_.compare("SCHED_OTHER")) {
         // Set normal thread nice value.
         while (tid_.load() == -1) {
             cpu_relax();
         }
-        setpriority(PRIO_PROCESS, tid_.load(), priority);
+        setpriority(PRIO_PROCESS, tid_.load(), priority_);
     }
-
-    policy_ = policy;
-    priority_ = priority;
+    return true;
 }
 
-int Engine::Priority() noexcept {
-    if (priority_ != -1) return priority_;
-    int policy;
-	sched_param param;
-	bzero((void*)&param, sizeof(param));
-	pthread_getschedparam(thread_.native_handle(),&policy, &param);
-    priority_ = param.sched_priority;
-    policy_ = policy;
+int32_t Engine::Priority() const noexcept {
     return priority_;
 }
 
-int Engine::Policy() noexcept {
-    if (priority_ != -1) return priority_;
-    int policy;
-	sched_param param;
-	bzero((void*)&param, sizeof(param));
-	pthread_getschedparam(thread_.native_handle(),&policy, &param);
-    priority_ = param.sched_priority;
-    policy_ = policy;
+const std::string& Engine::Policy() const noexcept {
     return policy_;
 }
 
 
-int Engine::Core() const noexcept {
-
-
-    return 0;
+const std::vector<int32_t>& Engine::Cores() const noexcept {
+    return cpus_;
 }
 
 void Engine::Push(const Task& data) {
@@ -160,6 +138,10 @@ uint32_t Engine::CurrentQueueSize() const noexcept {
 
 uint32_t Engine::MaxQueueSize() const noexcept {
     return 200;
+}
+
+int32_t Engine::Id() const noexcept {
+    return id_;
 }
 
 }

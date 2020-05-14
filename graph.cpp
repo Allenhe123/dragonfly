@@ -37,8 +37,28 @@ std::shared_ptr<Engine> Graph::GetEngine(const EnginePortID& id) const noexcept 
     return ite->second;
 }
 
+std::shared_ptr<Engine> Graph::GetEngine(int32_t id) const noexcept {
+    for (const auto& e : engines_) {
+        if (e.first.engine_id == id) {
+            return e.second;
+        }
+    }
+}
+
 void Graph::AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept {
     engines_[id] = e;
+}
+
+const EngineList& Graph::GetEngineList() const noexcept {
+    return engines_;
+}
+
+void Graph::AddConn(const Connect& c) noexcept {
+    conns_.push_back(c);
+}
+
+const ConnList& Graph::GetConnList() const noexcept {
+    return conns_;
 }
 
 }

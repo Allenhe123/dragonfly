@@ -6,6 +6,48 @@
 
 namespace df {
 
+namespace {
+    using namespace std;
+    struct engine {
+        int id;
+        string name;
+        int priority;
+        string policy;
+        string cpuaffi;
+        int thread_num;
+        std::vector<int> cpus;
+    };
+
+    struct graph {
+        int id;
+        int priority;
+        string policy;
+        std::vector<engine> engines;
+        std::vector<Connect> conns;
+    };
+
+    int32_t findChild(const std::vector<Connect>& conns, 
+                      const std::shared_ptr<Engine>& e) {
+        for (const auto& c : conns) {
+            if (c.src_id == e->Id()) {
+                return c.dst_id;
+            }
+        }
+        return -1;
+    }
+
+    int32_t findParent(const std::vector<Connect>& conns,
+                       const std::shared_ptr<Engine>& e) {
+        for (const auto& c : conns) {
+            if (c.dst_id == e->Id()) {
+                return c.src_id;
+            }
+        }
+        return -1;
+    }
+
+}
+
 void GraphMgr::ShutDown() {
     for (auto i : graphs_) {
         i.second->Destory();
@@ -33,33 +75,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
     if (document.Parse(json.c_str()).HasParseError()) return false;
     assert(document.IsObject());
 
-    struct engine {
-        int id;
-        string name;
-        int priority;
-        int policy;
-        string cpuaffi;
-        int thread_num;
-        std::vector<int> cpus;
-    };
-
-    struct connect {
-        int src_id;
-        int src_port;
-        int dst_id;
-        int dst_port;
-    };
-
-    struct graph {
-        int id;
-        int priority;
-        int policy;
-        std::vector<engine> engines;
-        std::vector<connect> conns;
-    };
-
     vector<graph> graphs;
-
     for (size_t i = 0; i < 100; i++)
     {
         char buf[256] = {0};
@@ -69,7 +85,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
             graph g;
             g.id = obj["graph_id"].GetInt();
             g.priority = obj["priority"].GetInt();
-            g.policy = obj["policy"].GetInt();
+            g.policy = obj["policy"].GetString();
             for (int j=0; j<100; j++) {
                 char buffer[256] = {0};
                 snprintf(buffer, 256, "engine%d", j);
@@ -79,7 +95,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
                     e.id = eobj["id"].GetInt();
                     e.name = eobj["engine_name"].GetString();
                     e.priority = eobj["priority"].GetInt();
-                    e.policy = eobj["policy"].GetInt();
+                    e.policy = eobj["policy"].GetString();
                     e.cpuaffi = eobj["cpu_affi"].GetString();
                     e.thread_num = eobj["thread_num"].GetInt();
                     const Value& array = eobj["cpus"];
@@ -94,7 +110,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
                 snprintf(buffer, 256, "connects%d", j);
                 if (obj.HasMember(buffer) && obj[buffer].IsObject()) {
                     const rapidjson::Value& cobj = obj[buffer];
-                    connect c;
+                    Connect c;
                     c.src_id = cobj["src_engine_id"].GetInt();
                     c.src_port = cobj["src_port_id"].GetInt();
                     c.dst_id = cobj["target_engine_id"].GetInt();
@@ -111,26 +127,40 @@ bool GraphMgr::CreateGraph(const std::string& config) {
         for (const auto& e : g.engines) {
             auto engine = std::make_shared<Engine>(e.id, e.priority, 
                           e.policy, e.cpuaffi, e.cpus, e.thread_num);
+            engine->SetSchedAffinity();
+            engine->SetSchedPolicy();
             EnginePortID id;
             id.graph_id = g.id;
             id.engine_id = e.id;
             id.port_id = 0;
             graph->AddEngine(id, engine);
         }
-
         for (const auto& c : g.conns) {
-            auto conn = std::make_shared
+            graph->AddConn(c);
+        }
+        graphs_[g.id] = graph;
+    }
+
+    for (const auto& g : graphs_) {
+        int id = g.first;
+        const auto& graph = g.second;
+        const EngineList& eglist = graph->GetEngineList();
+        const ConnList& conlist = graph->GetConnList();
+
+        for (auto& engine : eglist) {
+            int32_t childid = findChild(conlist, engine.second);
+            int32_t parentid = findParent(conlist, engine.second);
+            if (childid != -1) {
+                const auto& child = graph->GetEngine(childid);
+                engine.second->SetChild(child);
+            }
+            if (parentid != -1) {
+                const  auto& parent = graph->GetEngine(parentid);
+                engine.second->SetChild(parent);
+            }
         }
     }
     
-
-
-
-
-
-
-
-
 }
 
 std::shared_ptr<Graph> GraphMgr::GetGraph(uint32_t graphid) const noexcept {
@@ -141,7 +171,7 @@ std::shared_ptr<Graph> GraphMgr::GetGraph(uint32_t graphid) const noexcept {
 std::shared_ptr<Engine> GraphMgr::GetEngine(const EnginePortID& id) const noexcept {
     auto graph = GetGraph(id.graph_id);
     if (graph == nullptr) {
-        return;
+        return nullptr;
     }
     return graph->GetEngine(id);
 }

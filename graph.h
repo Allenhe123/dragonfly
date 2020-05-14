@@ -16,6 +16,18 @@ struct EnginePortID
     uint32_t graph_id = 0;
     uint32_t engine_id = 0;
     uint32_t port_id = 0;
+
+    // bool operator == (const EnginePortID& other) const noexcept {
+    //     return graph_id == other.graph_id 
+    //     && engine_id == other.engine_id
+    //     && port_id == other.port_id;
+    // }
+
+    // bool operator != (const EnginePortID& other) const noexcept {
+    //     return graph_id != other.graph_id 
+    //     || engine_id != other.engine_id
+    //     || port_id != other.port_id;
+    // }
 };
 
 struct HashFunc
@@ -34,6 +46,16 @@ struct CmpFunc
     }
 };
 
+struct Connect {
+    int src_id;
+    int src_port;
+    int dst_id;
+    int dst_port;
+};
+
+using EngineList = std::unordered_map<EnginePortID, std::shared_ptr<Engine>, HashFunc, CmpFunc>;
+using ConnList = std::vector<Connect>;
+
 class Graph
 {
 public:
@@ -44,12 +66,17 @@ public:
     void SendData(const EnginePortID& id, const Task& t);
 
     std::shared_ptr<Engine> GetEngine(const EnginePortID& id) const noexcept;
+    std::shared_ptr<Engine> GetEngine(int32_t id) const noexcept;
     void AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept;
+    void AddConn(const Connect& c) noexcept;
+
+    const EngineList& GetEngineList() const noexcept;
+    const ConnList& GetConnList() const noexcept;
 
 private:
     uint32_t graphid_ = 0;
-    std::unordered_map<EnginePortID, std::shared_ptr<Engine>, HashFunc, CmpFunc> engines_;
-
+    EngineList engines_;
+    ConnList conns_;
 };
 
 }

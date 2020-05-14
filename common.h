@@ -1,11 +1,11 @@
 #ifndef INC_DF_COMMON_H_
 #define INC_DF_COMMON_H_
+
 #include <type_traits>
 #include <cstdlib>
 #include <new>
 #include <string>
 #include <fstream>
-
 
 
 #if __GNUC__ >= 3
@@ -106,9 +106,6 @@ typename std::enable_if<!HasShutdown<T>::value>::type CallShutdown(
   DISALLOW_COPY_AND_ASSIGN(classname)
 
 
-bool file_exist(const std::string& file_name) {
-    std::ifstream f(file_name.c_str());
-    return f.good();
-}
+extern bool file_exist(const std::string& file_name);
 
 #endif
