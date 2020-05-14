@@ -48,6 +48,9 @@ namespace {
 
 }
 
+GraphMgr::GraphMgr() {}
+GraphMgr::~GraphMgr() { ShutDown(); }
+
 void GraphMgr::ShutDown() {
     for (auto i : graphs_) {
         i.second->Destory();
@@ -123,8 +126,11 @@ bool GraphMgr::CreateGraph(const std::string& config) {
     }
 
     for (const auto& g : graphs) {
+        printf("##graph id:%d\n", g.id);
         auto graph = std::make_shared<Graph>(g.id);
         for (const auto& e : g.engines) {
+            printf("  engine id:%d, priority:%d, policy:%s, cpuaffi:%s, threadnum:%d \n", 
+                    e.id, e.priority, e.policy.c_str(), e.cpuaffi.c_str(), e.thread_num);
             auto engine = std::make_shared<Engine>(e.id, e.priority, 
                           e.policy, e.cpuaffi, e.cpus, e.thread_num);
             engine->SetSchedAffinity();
@@ -136,6 +142,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
             graph->AddEngine(id, engine);
         }
         for (const auto& c : g.conns) {
+            printf("srcid:%d, srcport:%d, dstid:%d, dstport:%d\n", c.src_id, c.src_port, c.dst_id, c.dst_port);
             graph->AddConn(c);
         }
         graphs_[g.id] = graph;

@@ -16,6 +16,7 @@ add_compile_options("-O2")
 # #include_directories
 # include_directories(${PROJECT_BINARY_DIR}/cyberRT)
 
+ADD_SUBDIRECTORY(sample)
 
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})

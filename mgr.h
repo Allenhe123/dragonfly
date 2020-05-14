@@ -11,6 +11,7 @@ namespace df {
 class GraphMgr
 {
 public:
+    virtual ~GraphMgr();
     void ShutDown();
     bool CreateGraph(const std::string& config);
 
