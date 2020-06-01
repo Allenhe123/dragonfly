@@ -5,4 +5,4 @@ project(sample)
 add_executable(sample sample.cpp)
 target_link_libraries(sample df)
 
-#install(TARGETS sample DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS sample DESTINATION ${CMAKE_INSTALL_BINDIR})
