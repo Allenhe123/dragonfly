@@ -10,6 +10,7 @@ void Graph::Destory() {
 }
 
 void Graph::SendData(const EnginePortID& id, const Task& t) {
+    printf("egines size:%d\n", engines_.size());
     auto ite = engines_.find(id);
     if (ite == engines_.end()) {
         printf("can not find the engine \n");

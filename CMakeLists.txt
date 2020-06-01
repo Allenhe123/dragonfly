@@ -5,8 +5,6 @@ project(df-project)
 
 add_compile_options("-O2")
 
-ADD_SUBDIRECTORY(sample)
-
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})
 target_link_libraries(df pthread)

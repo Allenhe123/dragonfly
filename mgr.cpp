@@ -124,6 +124,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
             graphs.push_back(g);
         }
     }
+    printf("after parse json config file\n");
 
     for (const auto& g : graphs) {
         printf("##graph id:%d\n", g.id);
@@ -133,6 +134,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
                     e.id, e.priority, e.policy.c_str(), e.cpuaffi.c_str(), e.thread_num);
             auto engine = std::make_shared<Engine>(e.id, e.priority, 
                           e.policy, e.cpuaffi, e.cpus, e.thread_num);
+            engine->Init();
             engine->SetSchedAffinity();
             engine->SetSchedPolicy();
             EnginePortID id;
@@ -140,6 +142,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
             id.engine_id = e.id;
             id.port_id = 0;
             graph->AddEngine(id, engine);
+            printf("after add engine\n");
         }
         for (const auto& c : g.conns) {
             printf("srcid:%d, srcport:%d, dstid:%d, dstport:%d\n", c.src_id, c.src_port, c.dst_id, c.dst_port);
@@ -147,6 +150,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
         }
         graphs_[g.id] = graph;
     }
+    printf("after create engines\n");
 
     for (const auto& g : graphs_) {
         int id = g.first;
@@ -193,6 +197,7 @@ void GraphMgr::SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept {
 
 void GraphMgr::SendData(const EnginePortID& id, const Task& t) const noexcept {
     auto graph = GetGraph(id.graph_id);
+    printf("id.graph_id: %d\n", id.graph_id);
     if (graph == nullptr) {
         return;
     }

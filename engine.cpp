@@ -21,9 +21,12 @@ Engine::~Engine() {
 }
 
 void Engine::Init() {
-    std::thread t(&Engine::Entry, this);
-    thread_ = std::move(t);
-    thread_.join();
+    printf("init thread!!!\n");
+    thread_ = std::thread(&Engine::Entry, this);
+
+    printf("####id: %u\n", thread_.native_handle());
+    // thread_.join();
+    // thread_.detach();
 }
 
 void Engine::SetFunctor(std::function<Task(const Task&)> f) noexcept {
@@ -54,6 +57,10 @@ void Engine::Entry() {
 void Engine::Stop() noexcept {
     stop_ = true;
     NotifyAll();
+
+    if (thread_.joinable()) {
+        thread_.join();
+    }
 }
 
 void Engine::NotifyOne() {
@@ -71,15 +78,19 @@ const std::shared_ptr<Engine>& Engine::Parent() const noexcept { return parent_;
 
 bool Engine::SetSchedAffinity() {
     if (cpu_affi_.empty() || cpus_.empty()) return false;
+    printf("cpus: %d\n", std::thread::hardware_concurrency());
     cpu_set_t set;
     CPU_ZERO(&set);
     if (cpus_.size()) {
+        printf("####SetSchedAffinity \n");
         if (!cpu_affi_.compare("range")) {
             for (const auto cpu : cpus_) {
+                printf("cpu:%d\n", cpu);
                 CPU_SET(cpu, &set);
             }
             pthread_setaffinity_np(thread_.native_handle(), sizeof(set), &set);
         } else if (!cpu_affi_.compare("1to1")) {
+            printf("******SetSchedAffinity 1to1 \n");
             CPU_SET(cpus_[0], &set);
             pthread_setaffinity_np(thread_.native_handle(), sizeof(set), &set);
     }
