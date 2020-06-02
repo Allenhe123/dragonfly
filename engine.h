@@ -60,6 +60,7 @@ public:
 
     bool SetSchedAffinity();
     bool SetSchedPolicy();
+    void Dump() const noexcept;
 
 protected:
     void Entry();

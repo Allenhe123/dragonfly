@@ -5,13 +5,11 @@
 
 using namespace df;
 
-/////// 用可变模板参数
+/////// 用可变模板参数???
 Task process1(const Task& t) {
-    printf("process1 called\n");
-
     std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
 
-    printf("%s\n", input_arg->c_str());
+    printf("process1: %s\n", input_arg->c_str());
 
    // std::shared_ptr<std::string> output_string_ptr = std::make_shared<std::string>();
 
@@ -19,29 +17,24 @@ Task process1(const Task& t) {
 }
 
 Task process2(const Task& t) {
-    printf("process2 called\n");
-
     std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
 
-    printf("%s\n", input_arg->c_str());
+    printf("process2: %s\n", input_arg->c_str());
 
     return std::static_pointer_cast<void>(input_arg);
 }
 
 Task process3(const Task& t) {
-    printf("process3 called\n");
-
     std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
 
-    printf("%s\n", input_arg->c_str());
+    printf("process3: %s\n", input_arg->c_str());
 
     return std::static_pointer_cast<void>(input_arg);
 }
 
 int main(int argc, char* argv[]) {
-    printf("mainnn\n");
     GraphMgr::Instance()->CreateGraph("sample.json");
-    printf("after creategraph\n");
+    GraphMgr::Instance()->Dump();
     
     EnginePortID id;
     id.graph_id = 100;
@@ -61,6 +54,7 @@ int main(int argc, char* argv[]) {
         GraphMgr::Instance()->SendData(id, t);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	//break;
     }
 
     GraphMgr::Instance()->CleanUp();

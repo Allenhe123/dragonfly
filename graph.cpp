@@ -10,10 +10,9 @@ void Graph::Destory() {
 }
 
 void Graph::SendData(const EnginePortID& id, const Task& t) {
-    printf("egines size:%d\n", engines_.size());
     auto ite = engines_.find(id);
     if (ite == engines_.end()) {
-        printf("can not find the engine \n");
+        printf("Graph::SendData can not find the engine:%d\n", id.engine_id);
         return;
     }
     ite->second->Push(t);
@@ -23,7 +22,7 @@ void Graph::SetFunctor(const EnginePortID& id, FUNCTOR func)
 {
     auto ite = engines_.find(id);
     if (ite == engines_.end()) {
-        printf("can not find the engine \n");
+        printf("SetFunctor can not find the engine \n");
         return;
     }
     return ite->second->SetFunctor(func);
@@ -32,7 +31,7 @@ void Graph::SetFunctor(const EnginePortID& id, FUNCTOR func)
 std::shared_ptr<Engine> Graph::GetEngine(const EnginePortID& id) const noexcept {
     auto ite = engines_.find(id);
     if (ite == engines_.end()) {
-        printf("can not find the engine \n");
+        printf("GetEngine can not find the engine \n");
         return nullptr;
     }
     return ite->second;
@@ -61,5 +60,14 @@ void Graph::AddConn(const Connect& c) noexcept {
 const ConnList& Graph::GetConnList() const noexcept {
     return conns_;
 }
+
+void Graph::Dump() const noexcept {
+    for (const auto& e: engines_) {
+        printf("graph-id:%d, engine-id:%d, port-id:%d\n", e.first.graph_id, e.first.engine_id, e.first.port_id);
+        e.second->Dump();
+    }
+    printf("------------------\n");
+}
+
 
 }

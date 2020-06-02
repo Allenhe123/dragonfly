@@ -40,8 +40,8 @@ struct HashFunc
 struct CmpFunc
 {
     bool operator () (const EnginePortID& lhs,  const EnginePortID& rhs) const noexcept {
-        return lhs.engine_id == rhs.engine_id 
-        && lhs.graph_id == rhs.engine_id 
+        return lhs.graph_id == rhs.graph_id 
+        && lhs.engine_id == rhs.engine_id 
         && lhs.port_id == rhs.port_id;
     }
 };
@@ -72,6 +72,7 @@ public:
 
     const EngineList& GetEngineList() const noexcept;
     const ConnList& GetConnList() const noexcept;
+    void Dump() const noexcept;
 
 private:
     uint32_t graphid_ = 0;

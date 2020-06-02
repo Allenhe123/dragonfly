@@ -14,6 +14,7 @@ public:
     virtual ~GraphMgr();
     void ShutDown();
     bool CreateGraph(const std::string& config);
+    void Dump() const noexcept;
 
     void SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept;
     void SendData(const EnginePortID& id, const Task& t) const noexcept;

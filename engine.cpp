@@ -48,8 +48,8 @@ void Engine::Entry() {
         auto tt = functor_(t);
 
         if (child_ != nullptr && tt != nullptr) {
+            //printf("##engine-id:%d, child-id:%d\n", id_,  child_->Id());
             child_->Push(tt);
-            child_->NotifyOne();
         }
     }
 }
@@ -139,8 +139,11 @@ void Engine::Push(const Task& data) {
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    std::lock_guard<std::mutex> lk(mutex_);
-    queue_.push(data);
+    {
+        std::lock_guard<std::mutex> lk(mutex_);
+        queue_.push(data);
+    }
+    NotifyOne();
 }
 
 uint32_t Engine::CurrentQueueSize() const noexcept {
@@ -153,6 +156,11 @@ uint32_t Engine::MaxQueueSize() const noexcept {
 
 int32_t Engine::Id() const noexcept {
     return id_;
+}
+
+void Engine::Dump() const noexcept {
+    printf("------\n");
+    printf("engine-id:%d, parent-id:%d, child-id:%d\n", Id(), Parent() == nullptr? 0 : Parent()->Id(), Child() == nullptr? 0 : Child()->Id());
 }
 
 }

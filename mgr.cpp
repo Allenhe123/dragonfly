@@ -164,14 +164,25 @@ bool GraphMgr::CreateGraph(const std::string& config) {
             if (childid != -1) {
                 const auto& child = graph->GetEngine(childid);
                 engine.second->SetChild(child);
+                printf("%d set child to %d\n", engine.first.engine_id, childid);
             }
             if (parentid != -1) {
                 const  auto& parent = graph->GetEngine(parentid);
-                engine.second->SetChild(parent);
+                engine.second->SetParent(parent);
+                printf("%d set parent to %d\n", engine.first.engine_id, parentid);
             }
         }
     }
+    printf("after set connections\n");
     
+}
+
+void GraphMgr::Dump() const noexcept {
+    for (const auto& g : graphs_) {
+        printf("+++++++++++++++++\n");
+        printf("graph-id: %d\n", g.first);
+	g.second->Dump();
+    }
 }
 
 std::shared_ptr<Graph> GraphMgr::GetGraph(uint32_t graphid) const noexcept {
@@ -190,6 +201,7 @@ std::shared_ptr<Engine> GraphMgr::GetEngine(const EnginePortID& id) const noexce
 void GraphMgr::SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept {
     auto graph = GetGraph(id.graph_id);
     if (graph == nullptr) {
+        printf("can not find graph: %d\n", id.graph_id);
         return;
     }
     return graph->SetFunctor(id, func);
@@ -197,8 +209,8 @@ void GraphMgr::SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept {
 
 void GraphMgr::SendData(const EnginePortID& id, const Task& t) const noexcept {
     auto graph = GetGraph(id.graph_id);
-    printf("id.graph_id: %d\n", id.graph_id);
     if (graph == nullptr) {
+        printf("GraphMgr::SendData can not find  graph! graph_id: %d\n", id.graph_id);
         return;
     }
     return graph->SendData(id, t);

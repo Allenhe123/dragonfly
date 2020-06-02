@@ -9,4 +9,6 @@ AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})
 target_link_libraries(df pthread)
 
+add_subdirectory(sample)
+
 install(TARGETS df DESTINATION ${CMAKE_INSTALL_LIBDIR})
