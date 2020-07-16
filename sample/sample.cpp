@@ -5,7 +5,15 @@
 
 using namespace df;
 
-/////// 用可变模板参数???
+uint64_t Now() {
+    auto now  = std::chrono::high_resolution_clock::now();
+    auto nano_time_pt = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
+    auto epoch = nano_time_pt.time_since_epoch();
+    uint64_t now_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count();
+    return now_nano;
+}
+
+
 Task process1(const Task& t) {
     std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
 
@@ -52,11 +60,8 @@ int main(int argc, char* argv[]) {
         std::shared_ptr<std::string> tt = std::make_shared<std::string>("hello world!!!");
         auto t =  std::static_pointer_cast<void>(tt);
         GraphMgr::Instance()->SendData(id, t);
-
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	//break;
     }
-
     GraphMgr::Instance()->CleanUp();
 
     return 0;
