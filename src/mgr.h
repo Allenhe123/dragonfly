@@ -17,7 +17,7 @@ public:
     void Dump() const noexcept;
 
     void SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept;
-    void SendData(const EnginePortID& id, const Task& t) const noexcept;
+    void SendData(const EnginePortID& id, const Task t) const noexcept;
 
 private:
     std::shared_ptr<Graph> GetGraph(uint32_t graphid) const noexcept;

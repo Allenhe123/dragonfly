@@ -207,7 +207,7 @@ void GraphMgr::SetFunctor(const EnginePortID& id, FUNCTOR func) noexcept {
     return graph->SetFunctor(id, func);
 }
 
-void GraphMgr::SendData(const EnginePortID& id, const Task& t) const noexcept {
+void GraphMgr::SendData(const EnginePortID& id, const Task t) const noexcept {
     auto graph = GetGraph(id.graph_id);
     if (graph == nullptr) {
         printf("GraphMgr::SendData can not find  graph! graph_id: %d\n", id.graph_id);

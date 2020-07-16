@@ -2,8 +2,20 @@
 #include <cstdio>
 #include <thread>
 #include <chrono>
+#include <sstream>
+#include <cmath>
 
 using namespace df;
+
+
+const uint32_t kLoopTime = 1000000;
+
+struct Input {
+    uint64_t ts_;
+    std::string str_;
+
+    Input(uint64_t ts, const std::string& str): ts_(ts), str_(str) {} 
+};
 
 uint64_t Now() {
     auto now  = std::chrono::high_resolution_clock::now();
@@ -13,31 +25,58 @@ uint64_t Now() {
     return now_nano;
 }
 
-
 Task process1(const Task& t) {
-    std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
+    auto input_arg = std::static_pointer_cast<Input>(t);
+    uint64_t delta_ns = Now() - input_arg->ts_;
+    printf("process1 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
 
-    printf("process1: %s\n", input_arg->c_str());
+    uint32_t cnt = 0;
+    while (cnt++ < kLoopTime)
+    {
+        double temp = std::sqrt(cnt);
+    }
 
-   // std::shared_ptr<std::string> output_string_ptr = std::make_shared<std::string>();
-
-    return std::static_pointer_cast<void>(input_arg);
+    static uint32_t cnt1 = 0;
+    std::ostringstream os;
+    os << "engine-1001 input: " << cnt1++;
+    auto tt = std::make_shared<Input>(Now(), os.str());
+    return  std::static_pointer_cast<void>(tt);
 }
 
 Task process2(const Task& t) {
-    std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
+    auto input_arg = std::static_pointer_cast<Input>(t);
+    uint64_t delta_ns = Now() - input_arg->ts_;
+    printf("process2 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
 
-    printf("process2: %s\n", input_arg->c_str());
+    uint32_t cnt = 0;
+    while (cnt++ < kLoopTime)
+    {
+        double temp = std::sqrt(cnt);
+    }
 
-    return std::static_pointer_cast<void>(input_arg);
+    static uint32_t cnt1 = 0;
+    std::ostringstream os;
+    os << "engine-1002 input: " << cnt1++;
+    auto tt = std::make_shared<Input>(Now(), os.str());
+    return std::static_pointer_cast<void>(tt);
 }
 
 Task process3(const Task& t) {
-    std::shared_ptr<std::string> input_arg = std::static_pointer_cast<std::string>(t);
+    auto input_arg = std::static_pointer_cast<Input>(t);
+    uint64_t delta_ns = Now() - input_arg->ts_;
+    printf("process2 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
 
-    printf("process3: %s\n", input_arg->c_str());
+    uint32_t cnt = 0;
+    while (cnt++ < kLoopTime)
+    {
+        double temp = std::sqrt(cnt);
+    }
 
-    return std::static_pointer_cast<void>(input_arg);
+    static uint32_t cnt1 = 0;
+    std::ostringstream os;
+    os << "engine-1003 input: " << cnt1++;
+    auto tt = std::make_shared<Input>(Now(), os.str());
+    return std::static_pointer_cast<void>(tt);
 }
 
 int main(int argc, char* argv[]) {
@@ -56,8 +95,11 @@ int main(int argc, char* argv[]) {
     printf("after setfunctor\n");
 
     id.engine_id = 1000;
+    uint32_t count = 0;
     for (;;) {
-        std::shared_ptr<std::string> tt = std::make_shared<std::string>("hello world!!!");
+        std::ostringstream os;
+        os << "engine-1000 input: " << count++;
+        auto tt = std::make_shared<Input>(Now(), os.str());
         auto t =  std::static_pointer_cast<void>(tt);
         GraphMgr::Instance()->SendData(id, t);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));

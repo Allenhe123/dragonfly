@@ -63,7 +63,7 @@ public:
     Graph(int32_t id);
     void Destory();
     void SetFunctor(const EnginePortID& id, FUNCTOR func);
-    void SendData(const EnginePortID& id, const Task& t);
+    void SendData(const EnginePortID& id, const Task t);
 
     std::shared_ptr<Engine> GetEngine(const EnginePortID& id) const noexcept;
     std::shared_ptr<Engine> GetEngine(int32_t id) const noexcept;

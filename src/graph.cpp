@@ -9,7 +9,7 @@ void Graph::Destory() {
     engines_.clear();
 }
 
-void Graph::SendData(const EnginePortID& id, const Task& t) {
+void Graph::SendData(const EnginePortID& id, const Task t) {
     auto ite = engines_.find(id);
     if (ite == engines_.end()) {
         printf("Graph::SendData can not find the engine:%d\n", id.engine_id);
