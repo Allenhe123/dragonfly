@@ -94,6 +94,8 @@ int main(int argc, char* argv[]) {
     GraphMgr::Instance()->SetFunctor(id, process3);
     printf("after setfunctor\n");
 
+    printf("cpu num: %d\n", std::thread::hardware_concurrency());
+
     id.engine_id = 1000;
     uint32_t count = 0;
     for (;;) {
