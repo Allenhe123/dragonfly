@@ -174,7 +174,7 @@ bool GraphMgr::CreateGraph(const std::string& config) {
         }
     }
     printf("after set connections\n");
-    
+    return true;
 }
 
 void GraphMgr::Dump() const noexcept {

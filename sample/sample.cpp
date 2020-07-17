@@ -64,7 +64,7 @@ Task process2(const Task& t) {
 Task process3(const Task& t) {
     auto input_arg = std::static_pointer_cast<Input>(t);
     uint64_t delta_ns = Now() - input_arg->ts_;
-    printf("process2 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
+    printf("process3 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
 
     uint32_t cnt = 0;
     while (cnt++ < kLoopTime)
@@ -95,6 +95,10 @@ int main(int argc, char* argv[]) {
     printf("after setfunctor\n");
 
     printf("cpu num: %d\n", std::thread::hardware_concurrency());
+
+    auto t1 = Now();
+    auto t2 = Now();
+    printf("delta get time: %d(ns)\n", t2 - t1);
 
     id.engine_id = 1000;
     uint32_t count = 0;
