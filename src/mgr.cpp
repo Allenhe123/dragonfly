@@ -1,8 +1,14 @@
 #include "mgr.h"
 #include "common.h"
-#include "rapidjson/document.h"
+// #include "rapidjson/document.h"
 #include <fstream>
 #include <sstream>
+
+#include "file.h"
+#include "dfConfig.pb.h"
+#include "graph.pb.h"
+#include "engine.pb.h"
+#include "connect.pb.h"
 
 namespace df {
 
@@ -59,122 +65,24 @@ void GraphMgr::ShutDown() {
 }
 
 bool GraphMgr::CreateGraph(const std::string& config) {
-    using namespace rapidjson;
-    using namespace std;
-    if (!file_exist(config)) {
-        printf("config file: %s not exist \n", config.c_str());
-        return false;
+    df::conf::proto::DfConfig df_config;
+    if (file_exist(config) && apollo::cyber::common::GetProtoFromFile(config, &df_config)) {
+        std::cout << "load conf successfully" << std::endl;
+    } else {
+       return false;
     }
 
-    ifstream ifs(config);
-    if (!ifs.is_open()) {
-        printf("open file %s failed\n", config.c_str());
-        return false;
-    }
-    stringstream buffer;
-    buffer << ifs.rdbuf();
-    string json(buffer.str());
-    Document document; 
-    if (document.Parse(json.c_str()).HasParseError()) return false;
-    assert(document.IsObject());
+    for (int i=0; i<df_config.graphs_size(); i++) {
+        auto& graph = df_config.graphs(i);
+        auto graph_instance = std::make_shared<Graph>(graph.id(), graph.priority(), graph.policy());
 
-    vector<graph> graphs;
-    for (size_t i = 0; i < 100; i++)
-    {
-        char buf[256] = {0};
-        snprintf(buf, 256, "graph%d", i);
-        if (document.HasMember(buf) && document[buf].IsObject()) {
-            const rapidjson::Value& obj = document[buf];
-            graph g;
-            g.id = obj["graph_id"].GetInt();
-            g.priority = obj["priority"].GetInt();
-            g.policy = obj["policy"].GetString();
-            for (int j=0; j<100; j++) {
-                char buffer[256] = {0};
-                snprintf(buffer, 256, "engine%d", j);
-                if (obj.HasMember(buffer) && obj[buffer].IsObject()) {
-                    const rapidjson::Value& eobj = obj[buffer];
-                    engine e;
-                    e.id = eobj["id"].GetInt();
-                    e.name = eobj["engine_name"].GetString();
-                    e.priority = eobj["priority"].GetInt();
-                    e.policy = eobj["policy"].GetString();
-                    e.cpuaffi = eobj["cpu_affi"].GetString();
-                    e.thread_num = eobj["thread_num"].GetInt();
-                    const Value& array = eobj["cpus"];
-                    if (array.IsArray()) {
-                        for (SizeType k=0; k<array.Size(); k++) {
-                            e.cpus.push_back(array[k].GetInt());
-                        }
-                    }
-                    g.engines.push_back(e);
-                }
-                memset(buffer, 0, 256);
-                snprintf(buffer, 256, "connects%d", j);
-                if (obj.HasMember(buffer) && obj[buffer].IsObject()) {
-                    const rapidjson::Value& cobj = obj[buffer];
-                    Connect c;
-                    c.src_id = cobj["src_engine_id"].GetInt();
-                    c.src_port = cobj["src_port_id"].GetInt();
-                    c.dst_id = cobj["target_engine_id"].GetInt();
-                    c.dst_port = cobj["target_port_id"].GetInt();
-                    g.conns.push_back(c);
-                }
-            }
-            graphs.push_back(g);
+        for (int j=0; j<graph.engines_size(); j++) {
+            
         }
-    }
-    printf("after parse json config file\n");
 
-    for (const auto& g : graphs) {
-        printf("##graph id:%d\n", g.id);
-        auto graph = std::make_shared<Graph>(g.id);
-        for (const auto& e : g.engines) {
-            printf("  engine id:%d, priority:%d, policy:%s, cpuaffi:%s, threadnum:%d \n", 
-                    e.id, e.priority, e.policy.c_str(), e.cpuaffi.c_str(), e.thread_num);
-            auto engine = std::make_shared<Engine>(e.id, e.priority, 
-                          e.policy, e.cpuaffi, e.cpus, e.thread_num);
-            engine->Init();
-            engine->SetSchedAffinity();
-            engine->SetSchedPolicy();
-            EnginePortID id;
-            id.graph_id = g.id;
-            id.engine_id = e.id;
-            id.port_id = 0;
-            graph->AddEngine(id, engine);
-            printf("after add engine\n");
-        }
-        for (const auto& c : g.conns) {
-            printf("srcid:%d, srcport:%d, dstid:%d, dstport:%d\n", c.src_id, c.src_port, c.dst_id, c.dst_port);
-            graph->AddConn(c);
-        }
-        graphs_[g.id] = graph;
-    }
-    printf("after create engines\n");
 
-    for (const auto& g : graphs_) {
-        int id = g.first;
-        const auto& graph = g.second;
-        const EngineList& eglist = graph->GetEngineList();
-        const ConnList& conlist = graph->GetConnList();
-
-        for (auto& engine : eglist) {
-            int32_t childid = findChild(conlist, engine.second);
-            int32_t parentid = findParent(conlist, engine.second);
-            if (childid != -1) {
-                const auto& child = graph->GetEngine(childid);
-                engine.second->SetChild(child);
-                printf("%d set child to %d\n", engine.first.engine_id, childid);
-            }
-            if (parentid != -1) {
-                const  auto& parent = graph->GetEngine(parentid);
-                engine.second->SetParent(parent);
-                printf("%d set parent to %d\n", engine.first.engine_id, parentid);
-            }
-        }
+        graphs_[graph.id()] = graph_instance;
     }
-    printf("after set connections\n");
-    return true;
 }
 
 void GraphMgr::Dump() const noexcept {

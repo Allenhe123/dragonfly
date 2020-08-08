@@ -60,7 +60,8 @@ class Graph
 {
 public:
     Graph() = default;
-    Graph(int32_t id);
+    Graph(int32_t id, int priority, const std::string& policy): id_(id),
+          priority_(priority), policy_(policy) {}
     void Destory();
     void SetFunctor(const EnginePortID& id, FUNCTOR func);
     void SendData(const EnginePortID& id, const Task t);
@@ -75,7 +76,9 @@ public:
     void Dump() const noexcept;
 
 private:
-    uint32_t graphid_ = 0;
+    uint32_t id_ = 0;
+    int priority_;
+    std::string policy_;
     EngineList engines_;
     ConnList conns_;
 };

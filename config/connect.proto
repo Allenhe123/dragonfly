@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package df.conf.proto;
+
+message ConnectIntra {
+    uint32 src_engine_id = 1; 
+    uint32 src_port_id = 2;
+    uint32 dst_engine_id = 3;
+    uint32 dst_port_id = 4;  
+}
+
+message ConnectInter {
+    uint32 src_graph_id = 1;
+    uint32 src_engine_id = 2; 
+    uint32 src_port_id = 3;
+    uint32 dst_graph_id = 4;
+    uint32 dst_engine_id = 5;
+    uint32 dst_port_id = 6;
+    uint32 comm_port_number = 7;
+}
+
+message ConnectPublisher {
+    uint32 src_graph_id = 1;
+    uint32 src_engine_id = 2;
+    uint32 src_port_id = 3;
+    string remote_ip = 4;
+    uint32 remote_port = 5;
+}
+
+message ConnectRecipient {
+    uint32 src_graph_id = 1;
+    uint32 src_engine_id = 2;
+    uint32 src_port_id = 3;
+    uint32 listen_port = 4;
+}

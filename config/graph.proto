@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package df.conf.proto;
+
+import "engine.proto";
+import "connect.proto";
+
+message Graph {
+    uint32 id = 1;
+    uint32 priority = 2;
+    string policy = 3;
+    repeated Engine engines = 4;
+    repeated ConnectIntra connect_intra = 5;
+    repeated ConnectInter connect_inter = 6;
+    repeated ConnectPublisher connect_publiser = 7;
+    repeated ConnectRecipient connect_recipient = 8;
+}

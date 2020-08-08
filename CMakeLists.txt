@@ -9,6 +9,7 @@ if (NOT CMAKE_BUILD_TYPE)
  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+add_subdirectory(config)
 add_subdirectory(src)
 add_subdirectory(sample)
 

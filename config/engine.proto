@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package df.conf.proto;
+
+message Engine {
+    uint32 id = 1;
+    string name = 2;
+    string soname = 3;
+    uint32 thread_num = 4;
+    uint32 priority = 5;
+    string policy = 6;
+    string cpu_affi = 7;
+    string cpus = 8;
+    uint32 child_num = 9;
+    uint32 parent_num = 10;
+}

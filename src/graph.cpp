@@ -2,9 +2,6 @@
 
 namespace df {
 
-Graph::Graph(int32_t id): graphid_(id) {
-}
-
 void Graph::Destory() {
     engines_.clear();
 }
@@ -15,7 +12,7 @@ void Graph::SendData(const EnginePortID& id, const Task t) {
         printf("Graph::SendData can not find the engine:%d\n", id.engine_id);
         return;
     }
-    ite->second->Push(t);
+    ite->second->Push(id.port_id, t);
 }
 
 void Graph::SetFunctor(const EnginePortID& id, FUNCTOR func)

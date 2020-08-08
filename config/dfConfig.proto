@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package df.conf.proto;
+
+import "graph.proto";
+
+message DfConfig {
+    repeated Graph graphs = 1;
+}
