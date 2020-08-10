@@ -10,14 +10,24 @@
 
 namespace df {
 
+    uint64_t Now() {
+    auto now  = std::chrono::high_resolution_clock::now();
+    auto nano_time_pt = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
+    auto epoch = nano_time_pt.time_since_epoch();
+    uint64_t now_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count();
+    return now_nano;
+}
+
+
 // Engine::Engine(int id, int priority, const std::string& policy, 
 //                const std::string& affi, const std::vector<int>& cpus, 
 //                int threadnum, int inputSize):id_(id), priority_(priority), 
 //                policy_(policy), cpu_affi_(affi), thread_num_(threadnum),
 //                inQueue_(inputSize)
-Engine::Engine(int id, int threadnum, int inputSize, int outputSize): inQueue_(inputSize) {
+Engine::Engine(int id, int threadnum, int inputSize, int outputSize): inQueue_(inputSize),
+    parent_num_(inputSize), child_num_(outputSize), id_(id) {
     childs_.resize(outputSize);
-    parents_.resize(inputSize); 
+    // parents_.resize(inputSize); 
 }
 // {
 //     cpus_.assign(cpus.begin(), cpus.end());
@@ -32,8 +42,6 @@ void Engine::Init() {
     for (int i=0; i<thread_num_; i++) {
         threads_.push_back(std::thread(&Engine::Entry, this));
     }
-
-    // printf("####id: %u\n", thread_.native_handle());
     // thread_.join();
     // thread_.detach();
 }
@@ -51,6 +59,9 @@ void Engine::Entry() {
         cv_.wait(lk, [this]{ return !args_.empty();});
         lk.unlock();
 
+if (id_ == 1001) {
+    printf("t3: %llu\n", Now());
+}
         auto tt = functor_(args_);
 
         assert(tt.size() == childs_.size());
@@ -86,20 +97,35 @@ bool Engine::SetChild(int idx, const std::shared_ptr<Engine> ch) noexcept {
     return true;
 }
 
-bool Engine::SetParent(int idx, const std::shared_ptr<Engine> pa) noexcept { 
-    if (idx >= parents_.size()) return false;
-    parents_[idx] = pa;
-    return true;
-}
+// bool Engine::SetParent(int idx, const std::shared_ptr<Engine> pa) noexcept { 
+//     if (idx >= parents_.size()) return false;
+//     parents_[idx] = pa;
+//     return true;
+// }
 
 const std::shared_ptr<Engine> Engine::Child(int idx) const noexcept {
     if (idx <= childs_.size()) return childs_[idx];
     return nullptr;
 }
 
-const std::shared_ptr<Engine> Engine::Parent(int idx) const noexcept { 
-    if (idx <= parents_.size()) return parents_[idx];
-    return nullptr;
+// const std::shared_ptr<Engine> Engine::Parent(int idx) const noexcept { 
+//     if (idx <= parents_.size()) return parents_[idx];
+//     return nullptr;
+// }
+
+void Engine::AddPublisher(uint32_t qidx, const std::string& ip, uint32_t port) noexcept {
+    auto ptr = std::make_shared<Publisher>();
+    ptr->remote_queue_idx = qidx;
+    ptr->remote_ip = ip;
+    ptr->remote_port = port;
+    publishers_.push_back(std::move(ptr)); 
+}
+
+void Engine::AddRecipient(uint32_t qidx, uint32_t port) noexcept {
+    auto ptr =std::make_shared<Recipient>();
+    ptr->local_queue_idx = qidx;
+    ptr->listen_port = port;
+    recipients_.push_back(std::move(ptr));
 }
 
 bool Engine::SetSchedAffinity(int32_t idx, const std::string& affinity,
@@ -167,11 +193,33 @@ bool Engine::SetSchedPolicy(int32_t idx, int pority, const std::string& policy) 
 //     return cpus_;
 // }
 
+//
+struct Input {
+    uint64_t ts_;
+    std::string str_;
+
+    Input(uint64_t ts, const std::string& str): ts_(ts), str_(str) {} 
+};
+
 void Engine::Push(int32_t queueIdx, const Task& data) {
+    auto t1=Now();
+
+    printf("++++qidx:%d\n", queueIdx);
+
+    auto input_arg = std::static_pointer_cast<Input>(data);
+    printf("@@T: %f\n", (t1 - input_arg->ts_) / 1000.0);
+
     inQueue_.PushData(queueIdx, data);
 
     args_.clear();
     if (!inQueue_.PopAllData(args_)) return;
+
+    auto t2 = Now();
+
+    if (id_ == 1001) {
+        printf("delta: %f\n", (t2 - t1) / 1000.0);
+        printf("t2: %llu\n", t2);
+    }
 
     NotifyOne();
 }

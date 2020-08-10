@@ -26,14 +26,20 @@ using TaskVec = std::vector<std::shared_ptr<void>>;
 using TaskQueue = std::queue<Task>;
 using FUNCTOR = std::function<TaskVec(const TaskVec&)>;
 
-// struct Entity
-// {
-//     std::condition_variable cv_;
-//     std::mutex mutex_;
-//     TaskQueue queue_;
-// };
 
-// using Queue = std::unordered_map<std::string, Entity>;
+struct Publisher {
+    uint32_t remote_queue_idx;
+    std::string remote_ip;
+    uint32_t remote_port;
+};
+
+struct Recipient {
+    uint32_t local_queue_idx;
+    uint32_t listen_port;
+};
+
+using PublisherPtr = std::shared_ptr<Publisher>;
+using RecipientPtr = std::shared_ptr<Recipient>;
 
 
 class Engine
@@ -49,6 +55,7 @@ public:
     void Stop() noexcept;
     void NotifyOne();
     
+    // @queueIdx - each parent has a input, each parent has a queue
     void Push(int32_t queueIdx, const Task& data);
 
     // const std::vector<int32_t>& Cores() const noexcept;
@@ -56,10 +63,18 @@ public:
     // const std::string& Policy() const noexcept;
 
     bool SetChild(int idx, const std::shared_ptr<Engine> ch) noexcept;
-    bool SetParent(int idx, const std::shared_ptr<Engine> pa) noexcept;
+    // bool SetParent(int idx, const std::shared_ptr<Engine> pa) noexcept;
     const std::shared_ptr<Engine> Child(int idx) const noexcept;
-    const std::shared_ptr<Engine> Parent(int idx) const noexcept;
+    // const std::shared_ptr<Engine> Parent(int idx) const noexcept;
     int32_t Id() const noexcept;
+    uint32_t InputNum() const noexcept { return parent_num_; }
+    uint32_t OutputNum() const noexcept { return child_num_; }
+    void AddConn(uint32_t child_idx, uint32_t child_queue_idx) noexcept {
+        intra_conns_[child_idx] = child_queue_idx;
+    }
+
+    void AddPublisher(uint32_t qidx, const std::string& ip, uint32_t port) noexcept;
+    void AddRecipient(uint32_t qidx, uint32_t port) noexcept;
 
     void SetFunctor(std::function<TaskVec (const TaskVec&)> f) noexcept;
 
@@ -77,11 +92,20 @@ protected:
 
 protected:
     std::vector<std::thread> threads_;
-    TaskQueue queue_;
     std::condition_variable cv_;
     std::mutex mutex_;
-    std::vector<std::shared_ptr<Engine>> parents_;
+
+    uint32_t parent_num_;
+    uint32_t child_num_;
+    
+    // intra
+    // std::vector<std::shared_ptr<Engine>> parents_;
     std::vector<std::shared_ptr<Engine>> childs_;
+    std::map<uint32_t, uint32_t> intra_conns_;
+
+    std::vector<PublisherPtr> publishers_;
+    std::vector<RecipientPtr> recipients_;
+
     bool stop_ = false;
     FUNCTOR functor_;
     int32_t id_ = -1;

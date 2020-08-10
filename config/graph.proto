@@ -11,7 +11,7 @@ message Graph {
     string policy = 3;
     repeated Engine engines = 4;
     repeated ConnectIntra connect_intra = 5;
-    repeated ConnectInter connect_inter = 6;
-    repeated ConnectPublisher connect_publiser = 7;
-    repeated ConnectRecipient connect_recipient = 8;
+    // repeated ConnectInter connect_inter = 6;
+    repeated ConnectPublisher connect_publiser = 6;
+    repeated ConnectRecipient connect_recipient = 7;
 }

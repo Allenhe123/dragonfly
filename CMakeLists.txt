@@ -14,4 +14,3 @@ add_subdirectory(src)
 add_subdirectory(sample)
 
 install(DIRECTORY src/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/df FILES_MATCHING PATTERN "*.h")
-

@@ -42,7 +42,7 @@ std::shared_ptr<Engine> Graph::GetEngine(int32_t id) const noexcept {
     }
 }
 
-void Graph::AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept {
+void Graph::AddEngine(const EnginePortID& id, const std::shared_ptr<Engine> e) noexcept {
     engines_[id] = e;
 }
 
@@ -63,7 +63,6 @@ void Graph::Dump() const noexcept {
         printf("graph-id:%d, engine-id:%d, port-id:%d\n", e.first.graph_id, e.first.engine_id, e.first.port_id);
         e.second->Dump();
     }
-    printf("------------------\n");
 }
 
 

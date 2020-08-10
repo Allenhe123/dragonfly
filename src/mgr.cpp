@@ -14,23 +14,6 @@ namespace df {
 
 namespace {
     using namespace std;
-    struct engine {
-        int id;
-        string name;
-        int priority;
-        string policy;
-        string cpuaffi;
-        int thread_num;
-        std::vector<int> cpus;
-    };
-
-    struct graph {
-        int id;
-        int priority;
-        string policy;
-        std::vector<engine> engines;
-        std::vector<Connect> conns;
-    };
 
     int32_t findChild(const std::vector<Connect>& conns, 
                       const std::shared_ptr<Engine>& e) {
@@ -75,13 +58,69 @@ bool GraphMgr::CreateGraph(const std::string& config) {
     for (int i=0; i<df_config.graphs_size(); i++) {
         auto& graph = df_config.graphs(i);
         auto graph_instance = std::make_shared<Graph>(graph.id(), graph.priority(), graph.policy());
+        graphs_[graph.id()] = graph_instance;
 
         for (int j=0; j<graph.engines_size(); j++) {
-            
+            auto& engine = graph.engines(j);
+            auto engine_instance = std::make_shared<Engine>(engine.id(), engine.thread_num(),
+                                                            engine.parent_num(), engine.child_num());
+            engine_instance->Init();
+            std::vector<int> cpus;
+            cpus.push_back(std::stoi(engine.cpus()));
+            engine_instance->SetSchedAffinity(0, engine.cpu_affi(), cpus);
+            engine_instance->SetSchedPolicy(0, 0, engine.policy());
+            EnginePortID epid;
+            epid.graph_id = graph_instance->Id();
+            epid.engine_id = engine_instance->Id();
+            epid.port_id = 0;
+            graph_instance->AddEngine(epid, engine_instance);
         }
 
+        for (int j=0; j<graph.connect_intra_size(); j++) {
+            auto& conn_intra = graph.connect_intra(j);
+            const EngineList& eglist = graph_instance->GetEngineList();
 
-        graphs_[graph.id()] = graph_instance;
+            EnginePortID epid;
+            epid.graph_id = graph.id();
+            epid.engine_id = conn_intra.dst_engine_id();
+            auto ite_child = eglist.find(epid);
+            epid.engine_id = conn_intra.src_engine_id();
+            auto ite_parent = eglist.find(epid);
+
+            if (ite_child == eglist.end() || ite_parent == eglist.end()) {
+                std::cout << "invalid graph id or engine id" << std::endl;
+                return false;
+            }
+
+            // parent has OutputNum() outut args
+            // child has InputNum() input args
+            // parent's src_port_id() output to child's dst_port_id() input queue
+            assert(conn_intra.src_port_id() < ite_parent->second->OutputNum());
+            assert(conn_intra.dst_port_id() < ite_child->second->InputNum());
+            ite_parent->second->SetChild(conn_intra.src_port_id(), ite_child->second);
+            ite_parent->second->AddConn(conn_intra.src_port_id(), conn_intra.dst_port_id());
+        }
+
+        for (int j=0; j<graph.connect_publiser_size(); j++) {
+            auto& conn_pub = graph.connect_publiser(j);
+            const EngineList& eglist = graph_instance->GetEngineList();
+            EnginePortID epid;
+            epid.graph_id = graph.id();
+            epid.engine_id = conn_pub.engine_id();
+            auto ite = eglist.find(epid);
+            ite->second->AddPublisher(conn_pub.port_id(), 
+                    conn_pub.remote_ip(), conn_pub.remote_port());
+        }
+
+        for (int j=0; j<graph.connect_recipient_size(); j++) {
+            auto& conn_rec = graph.connect_recipient(j);
+            const EngineList& eglist = graph_instance->GetEngineList();
+            EnginePortID epid;
+            epid.graph_id = conn_rec.graph_id();
+            epid.engine_id = conn_rec.engine_id();
+            auto ite = eglist.find(epid);
+            ite->second->AddRecipient(conn_rec.port_id(), conn_rec.listen_port());
+        }
     }
 }
 
@@ -89,7 +128,7 @@ void GraphMgr::Dump() const noexcept {
     for (const auto& g : graphs_) {
         printf("+++++++++++++++++\n");
         printf("graph-id: %d\n", g.first);
-	g.second->Dump();
+	    g.second->Dump();
     }
 }
 

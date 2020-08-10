@@ -68,8 +68,9 @@ public:
 
     std::shared_ptr<Engine> GetEngine(const EnginePortID& id) const noexcept;
     std::shared_ptr<Engine> GetEngine(int32_t id) const noexcept;
-    void AddEngine(const EnginePortID& id, const std::shared_ptr<Engine>& e) noexcept;
+    void AddEngine(const EnginePortID& id, const std::shared_ptr<Engine> e) noexcept;
     void AddConn(const Connect& c) noexcept;
+    uint32_t Id() const noexcept { return id_; }
 
     const EngineList& GetEngineList() const noexcept;
     const ConnList& GetConnList() const noexcept;

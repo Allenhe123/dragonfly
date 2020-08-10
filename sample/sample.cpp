@@ -4,6 +4,7 @@
 #include <chrono>
 #include <sstream>
 #include <cmath>
+#include <iostream>
 
 using namespace df;
 
@@ -27,6 +28,7 @@ uint64_t Now() {
 
 TaskVec process1(const TaskVec& t) {
     TaskVec out;
+    printf("Processor1RecvTime: %llu\n", Now());
     for (const auto& arg : t) {
         auto input_arg = std::static_pointer_cast<Input>(arg);
         uint64_t delta_ns = Now() - input_arg->ts_;
@@ -122,6 +124,8 @@ int main(int argc, char* argv[]) {
         os << "engine-1000 input: " << count++;
         auto tt = std::make_shared<Input>(Now(), os.str());
         auto t =  std::static_pointer_cast<void>(tt);
+
+        printf("SendTime: %llu\n", Now());
         GraphMgr::Instance()->SendData(id, t);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }

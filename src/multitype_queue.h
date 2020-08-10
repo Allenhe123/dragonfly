@@ -80,6 +80,7 @@ namespace df {
             }
             
             // 索引号非法，则返回失败  
+            printf("qIndex: %d, qumnum:%d\n", qIndex, qumNum_);
             if (qIndex >= qumNum_) {
                 return false;
             }
