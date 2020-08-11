@@ -24,8 +24,7 @@ namespace df {
 using Task = std::shared_ptr<void>;
 using TaskVec = std::vector<std::shared_ptr<void>>;
 using TaskQueue = std::queue<Task>;
-using FUNCTOR = std::function<TaskVec(const TaskVec&)>;
-
+using FUNCTOR = std::function<void(const TaskVec&, TaskVec&)>;
 
 struct Publisher {
     uint32_t remote_queue_idx;
@@ -53,22 +52,15 @@ public:
 
     void Init();
     void Stop() noexcept;
-    void NotifyOne();
     
     // @queueIdx - each parent has a input, each parent has a queue
     void Push(int32_t queueIdx, const Task& data);
 
-    // const std::vector<int32_t>& Cores() const noexcept;
-    // int32_t Priority() const noexcept;
-    // const std::string& Policy() const noexcept;
-
     bool SetChild(int idx, const std::shared_ptr<Engine> ch) noexcept;
-    // bool SetParent(int idx, const std::shared_ptr<Engine> pa) noexcept;
     const std::shared_ptr<Engine> Child(int idx) const noexcept;
-    // const std::shared_ptr<Engine> Parent(int idx) const noexcept;
     int32_t Id() const noexcept;
-    uint32_t InputNum() const noexcept { return parent_num_; }
-    uint32_t OutputNum() const noexcept { return child_num_; }
+    uint32_t InputNum() const noexcept { return input_num_; }
+    uint32_t OutputNum() const noexcept { return output_num_; }
     void AddConn(uint32_t child_idx, uint32_t child_queue_idx) noexcept {
         intra_conns_[child_idx] = child_queue_idx;
     }
@@ -76,30 +68,28 @@ public:
     void AddPublisher(uint32_t qidx, const std::string& ip, uint32_t port) noexcept;
     void AddRecipient(uint32_t qidx, uint32_t port) noexcept;
 
-    void SetFunctor(std::function<TaskVec (const TaskVec&)> f) noexcept;
+    void SetFunctor(FUNCTOR f) noexcept;
 
-    // uint32_t CurrentQueueSize() const noexcept;
-    // uint32_t MaxQueueSize() const noexcept;
+    bool SetSchedAffinity(int32_t idx, const std::string& affinity, const std::vector<int>& cpus);
+    bool SetSchedPolicy(int32_t idx, int poriorty, const std::string& policy);
 
-    bool SetSchedAffinity(int32_t idx, const std::string& affinity, 
-                          const std::vector<int>& cpus);
-    bool SetSchedPolicy(int32_t idx, int pority, const std::string& policy);
     void Dump() const noexcept;
 
 protected:
-    void Entry();
+    void NotifyOne();
     void NotifyAll();
+    void PushToChildren() const;
+
 
 protected:
     std::vector<std::thread> threads_;
     std::condition_variable cv_;
     std::mutex mutex_;
 
-    uint32_t parent_num_;
-    uint32_t child_num_;
+    uint32_t input_num_;
+    uint32_t output_num_;
     
-    // intra
-    // std::vector<std::shared_ptr<Engine>> parents_;
+    // intra_
     std::vector<std::shared_ptr<Engine>> childs_;
     std::map<uint32_t, uint32_t> intra_conns_;
 
@@ -118,7 +108,10 @@ protected:
     std::atomic<bool> running_{false};
 
     MultiTypeQueue inQueue_;
-    std::vector<std::shared_ptr<void>> args_;
+    TaskVec args_;
+    TaskVec output_;
+
+    uint64_t notify_time_ =0 ;
 };
 
 }

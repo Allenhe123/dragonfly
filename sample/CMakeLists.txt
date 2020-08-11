@@ -6,6 +6,6 @@ project(sample)
 #message(STATUS "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
 add_executable(sample sample.cpp)
-target_link_libraries(sample df)
+target_link_libraries(sample df profiler)
 
 install(TARGETS sample DESTINATION ${CMAKE_INSTALL_BINDIR})

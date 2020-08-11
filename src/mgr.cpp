@@ -1,8 +1,8 @@
 #include "mgr.h"
-#include "common.h"
-// #include "rapidjson/document.h"
+
 #include <fstream>
 #include <sstream>
+#include <string>
 
 #include "file.h"
 #include "dfConfig.pb.h"
@@ -10,32 +10,10 @@
 #include "engine.pb.h"
 #include "connect.pb.h"
 
+#include "common.h"
+#include "pin_thread.h"
+
 namespace df {
-
-namespace {
-    using namespace std;
-
-    int32_t findChild(const std::vector<Connect>& conns, 
-                      const std::shared_ptr<Engine>& e) {
-        for (const auto& c : conns) {
-            if (c.src_id == e->Id()) {
-                return c.dst_id;
-            }
-        }
-        return -1;
-    }
-
-    int32_t findParent(const std::vector<Connect>& conns,
-                       const std::shared_ptr<Engine>& e) {
-        for (const auto& c : conns) {
-            if (c.dst_id == e->Id()) {
-                return c.src_id;
-            }
-        }
-        return -1;
-    }
-
-}
 
 GraphMgr::GraphMgr() {}
 GraphMgr::~GraphMgr() { ShutDown(); }
@@ -60,15 +38,25 @@ bool GraphMgr::CreateGraph(const std::string& config) {
         auto graph_instance = std::make_shared<Graph>(graph.id(), graph.priority(), graph.policy());
         graphs_[graph.id()] = graph_instance;
 
+        std::vector<int> cpus;
+        apollo::cyber::scheduler::ParseCpuset(graph.cpus(), &cpus);
+        apollo::cyber::scheduler::SetSchedAffinity1(pthread_self(), cpus, graph.cpu_affi());
+        apollo::cyber::scheduler::SetSchedPolicy1(pthread_self(), graph.policy(), graph.priority(), "main thread");
+
         for (int j=0; j<graph.engines_size(); j++) {
             auto& engine = graph.engines(j);
             auto engine_instance = std::make_shared<Engine>(engine.id(), engine.thread_num(),
                                                             engine.parent_num(), engine.child_num());
             engine_instance->Init();
-            std::vector<int> cpus;
-            cpus.push_back(std::stoi(engine.cpus()));
-            engine_instance->SetSchedAffinity(0, engine.cpu_affi(), cpus);
-            engine_instance->SetSchedPolicy(0, 0, engine.policy());
+
+            cpus.clear();
+            apollo::cyber::scheduler::ParseCpuset(engine.cpus(), &cpus);
+
+            for (int k=0; k<engine.thread_num(); k++) {
+                engine_instance->SetSchedAffinity(k, engine.cpu_affi(), cpus);
+                engine_instance->SetSchedPolicy(k, engine.priority(), engine.policy());
+            }
+
             EnginePortID epid;
             epid.graph_id = graph_instance->Id();
             epid.engine_id = engine_instance->Id();
@@ -125,11 +113,11 @@ bool GraphMgr::CreateGraph(const std::string& config) {
 }
 
 void GraphMgr::Dump() const noexcept {
+    printf("+++++++++++++++++++++++++++++++++\n");
     for (const auto& g : graphs_) {
-        printf("+++++++++++++++++\n");
-        printf("graph-id: %d\n", g.first);
 	    g.second->Dump();
     }
+    printf("+++++++++++++++++++++++++++++++++\n");
 }
 
 std::shared_ptr<Graph> GraphMgr::GetGraph(uint32_t graphid) const noexcept {

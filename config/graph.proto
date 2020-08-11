@@ -9,9 +9,11 @@ message Graph {
     uint32 id = 1;
     uint32 priority = 2;
     string policy = 3;
-    repeated Engine engines = 4;
-    repeated ConnectIntra connect_intra = 5;
+    string cpu_affi = 4;
+    string cpus = 5;
+    repeated Engine engines = 6;
+    repeated ConnectIntra connect_intra = 7;
     // repeated ConnectInter connect_inter = 6;
-    repeated ConnectPublisher connect_publiser = 6;
-    repeated ConnectRecipient connect_recipient = 7;
+    repeated ConnectPublisher connect_publiser = 8;
+    repeated ConnectRecipient connect_recipient = 9;
 }

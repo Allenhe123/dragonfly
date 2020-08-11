@@ -6,10 +6,12 @@
 #include <cmath>
 #include <iostream>
 
+#include <gperftools/profiler.h>
+
 using namespace df;
 
 
-const uint32_t kLoopTime = 1000000;
+const uint32_t kLoopTime = 10000;
 
 struct Input {
     uint64_t ts_;
@@ -26,13 +28,12 @@ uint64_t Now() {
     return now_nano;
 }
 
-TaskVec process1(const TaskVec& t) {
-    TaskVec out;
-    printf("Processor1RecvTime: %llu\n", Now());
+void process1(const TaskVec& t, TaskVec& out) {
+    out.clear();
     for (const auto& arg : t) {
         auto input_arg = std::static_pointer_cast<Input>(arg);
         uint64_t delta_ns = Now() - input_arg->ts_;
-        printf("process1 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
+        printf("process1-deltatime:%4.2f(us)\n", delta_ns / 1000.0f);
 
         uint32_t cnt = 0;
         while (cnt++ < kLoopTime)
@@ -46,15 +47,14 @@ TaskVec process1(const TaskVec& t) {
         auto tt = std::make_shared<Input>(Now(), os.str());
         out.push_back(std::move(tt));
     }
-    return std::move(out);
 }
 
-TaskVec process2(const TaskVec& t) {
-    TaskVec out;
+void process2(const TaskVec& t, TaskVec& out) {
+    out.clear();
     for (const auto& arg : t) {
         auto input_arg = std::static_pointer_cast<Input>(arg);
         uint64_t delta_ns = Now() - input_arg->ts_;
-        printf("process2 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
+        printf("process2-deltatime:%4.2f(us)\n", delta_ns / 1000.0f);
 
         uint32_t cnt = 0;
         while (cnt++ < kLoopTime)
@@ -68,15 +68,14 @@ TaskVec process2(const TaskVec& t) {
         auto tt = std::make_shared<Input>(Now(), os.str());
         out.push_back(std::move(tt));
     }
-    return std::move(out);
 }
 
-TaskVec process3(const TaskVec& t) {
-    TaskVec out;
+void process3(const TaskVec& t, TaskVec& out) {
+    out.clear();
     for (const auto& arg : t) {
         auto input_arg = std::static_pointer_cast<Input>(arg);
         uint64_t delta_ns = Now() - input_arg->ts_;
-        printf("process3 recv: %s, deltatime:%4.2f(us)\n", input_arg->str_.c_str(), delta_ns / 1000.0f);
+        printf("process3-deltatime:%4.2f(us)\n", delta_ns / 1000.0f);
 
         uint32_t cnt = 0;
         while (cnt++ < kLoopTime)
@@ -84,16 +83,17 @@ TaskVec process3(const TaskVec& t) {
             double temp = std::sqrt(cnt);
         }
 
-        static uint32_t cnt1 = 0;
-        std::ostringstream os;
-        os << "engine-1003 input: " << cnt1++;
-        auto tt = std::make_shared<Input>(Now(), os.str());
-        out.push_back(std::move(tt));
+        // static uint32_t cnt1 = 0;
+        // std::ostringstream os;
+        // os << "engine-1003 input: " << cnt1++;
+        // auto tt = std::make_shared<Input>(Now(), os.str());
+        // out.push_back(std::move(tt));
     }
-    return std::move(out);
 }
 
 int main(int argc, char* argv[]) {
+    ProfilerStart("test.prof");
+
     GraphMgr::Instance()->CreateGraph("sample.conf");
     GraphMgr::Instance()->Dump();
     
@@ -109,27 +109,23 @@ int main(int argc, char* argv[]) {
     id.engine_id = 1003;
 
     GraphMgr::Instance()->SetFunctor(id, process3);
-    printf("after setfunctor\n");
 
-    printf("cpu num: %d\n", std::thread::hardware_concurrency());
-
-    auto t1 = Now();
-    auto t2 = Now();
-    printf("delta get time: %d(ns)\n", t2 - t1);
+    printf("Cpu-num: %d\n", std::thread::hardware_concurrency());
 
     id.engine_id = 1001;
     uint32_t count = 0;
-    for (;;) {
+    for (int cnt =0; cnt < 200; cnt++) {
         std::ostringstream os;
         os << "engine-1000 input: " << count++;
         auto tt = std::make_shared<Input>(Now(), os.str());
         auto t =  std::static_pointer_cast<void>(tt);
 
-        printf("SendTime: %llu\n", Now());
         GraphMgr::Instance()->SendData(id, t);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     GraphMgr::Instance()->CleanUp();
+
+    ProfilerStop();
 
     return 0;
 }

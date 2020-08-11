@@ -79,8 +79,7 @@ namespace df {
                 return false;
             }
             
-            // 索引号非法，则返回失败  
-            printf("qIndex: %d, qumnum:%d\n", qIndex, qumNum_);
+            // 索引号非法，则返回失败
             if (qIndex >= qumNum_) {
                 return false;
             }

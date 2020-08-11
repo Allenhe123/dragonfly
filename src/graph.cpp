@@ -59,8 +59,9 @@ const ConnList& Graph::GetConnList() const noexcept {
 }
 
 void Graph::Dump() const noexcept {
+    printf("Graph-id: %d\n", id_);
     for (const auto& e: engines_) {
-        printf("graph-id:%d, engine-id:%d, port-id:%d\n", e.first.graph_id, e.first.engine_id, e.first.port_id);
+        printf("    ");
         e.second->Dump();
     }
 }
