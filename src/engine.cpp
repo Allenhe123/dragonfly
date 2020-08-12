@@ -159,4 +159,12 @@ void Engine::Dump() const noexcept {
     }
 }
 
+void Engine::InitPublisher() {
+    if (!publishers_.empty()) {
+            for (const auto& p : publishers_)
+            publisher_proxys_.emplace_back(new PublisherProxy(io_context_, p->remote_ip, 
+                p->remote_port, p->remote_queue_idx));
+        }
+    }
+
 }

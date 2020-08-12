@@ -18,6 +18,7 @@ each out corressponding to a child,
 #include <functional>
 
 #include "multitype_queue.h"
+#include "publisher_proxy.h"
 
 namespace df {
 
@@ -80,6 +81,8 @@ protected:
     void NotifyAll();
     void PushToChildren() const;
 
+    void InitPublisher();
+
 
 protected:
     std::vector<std::thread> threads_;
@@ -112,6 +115,9 @@ protected:
     TaskVec output_;
 
     uint64_t notify_time_ =0 ;
+
+    asio::io_context io_context_;
+    std::vector<std::shared_ptr<PublisherProxy>> publisher_proxys_;
 };
 
 }

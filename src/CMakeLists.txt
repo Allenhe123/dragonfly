@@ -13,6 +13,7 @@ else()
 endif (NOT Protobuf_FOUND)
 
 include_directories(${CMAKE_BINARY_DIR}/config)
+include_directories(asio/include)
 
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})
