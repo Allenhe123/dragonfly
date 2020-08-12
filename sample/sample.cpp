@@ -92,40 +92,46 @@ void process3(const TaskVec& t, TaskVec& out) {
 }
 
 int main(int argc, char* argv[]) {
-    ProfilerStart("test.prof");
 
-    GraphMgr::Instance()->CreateGraph("sample.conf");
-    GraphMgr::Instance()->Dump();
-    
-    EnginePortID id;
-    id.graph_id = 1;
-    id.engine_id = 1001;
-    id.port_id = 0;
+    try {
+        ProfilerStart("test.prof");
 
-    GraphMgr::Instance()->SetFunctor(id, process1);
-    id.engine_id = 1002;
+        GraphMgr::Instance()->CreateGraph("sample.conf");
+        GraphMgr::Instance()->Dump();
+        
+        EnginePortID id;
+        id.graph_id = 1;
+        id.engine_id = 1001;
+        id.port_id = 0;
 
-    GraphMgr::Instance()->SetFunctor(id, process2);
-    id.engine_id = 1003;
+        GraphMgr::Instance()->SetFunctor(id, process1);
+        id.engine_id = 1002;
 
-    GraphMgr::Instance()->SetFunctor(id, process3);
+        GraphMgr::Instance()->SetFunctor(id, process2);
+        id.engine_id = 1003;
 
-    printf("Cpu-num: %d\n", std::thread::hardware_concurrency());
+        GraphMgr::Instance()->SetFunctor(id, process3);
 
-    id.engine_id = 1001;
-    uint32_t count = 0;
-    for (int cnt =0; cnt < 200; cnt++) {
-        std::ostringstream os;
-        os << "engine-1000 input: " << count++;
-        auto tt = std::make_shared<Input>(Now(), os.str());
-        auto t =  std::static_pointer_cast<void>(tt);
+        printf("Cpu-num: %d\n", std::thread::hardware_concurrency());
 
-        GraphMgr::Instance()->SendData(id, t);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        id.engine_id = 1001;
+        uint32_t count = 0;
+        for (int cnt =0; cnt < 200; cnt++) {
+            std::ostringstream os;
+            os << "engine-1000 input: " << count++;
+            auto tt = std::make_shared<Input>(Now(), os.str());
+            auto t =  std::static_pointer_cast<void>(tt);
+
+            GraphMgr::Instance()->SendData(id, t);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+        GraphMgr::Instance()->CleanUp();
+
+        ProfilerStop();
     }
-    GraphMgr::Instance()->CleanUp();
-
-    ProfilerStop();
-
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << "\n";
+    }
     return 0;
 }
