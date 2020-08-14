@@ -6,7 +6,8 @@
 #include <deque>
 #include <chrono>
 #include <thread>
-#include "asio/include/asio.hpp"
+#include "asio.hpp"
+// #include "asio/io_context.hpp"
 
 using asio::ip::tcp;
 
@@ -20,9 +21,9 @@ using MsgQueue = std::deque<Msg>;
 
 class PublisherProxy {
 public:
-    PublisherProxy(asio::io_context& io_context, const std::string& ip, uint32_t port, uint32_t qidx): 
-        io_context_(io_context), socket_(io_context), ip_(ip), port_(port) {
-            tcp::resolver resolver(io_context);
+    PublisherProxy(asio::io_context& ctx, const std::string& ip, uint32_t port, uint32_t qidx): 
+        io_context_(ctx), socket_(ctx), ip_(ip), port_(port) {
+            tcp::resolver resolver(ctx);
             std::ostringstream oss;
             oss << port;
             auto endpoints = resolver.resolve(ip, oss.str());

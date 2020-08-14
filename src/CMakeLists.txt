@@ -3,6 +3,9 @@ include(GNUInstallDirs)
 
 project(df-project)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DASIO_STANDALONE")
+add_compile_options(-DASIO_STANDALONE)
+
 find_package(Protobuf REQUIRED)
 if (NOT Protobuf_FOUND)
     message(FATAL_ERROR "Protobuf Not Found!")
@@ -13,7 +16,9 @@ else()
 endif (NOT Protobuf_FOUND)
 
 include_directories(${CMAKE_BINARY_DIR}/config)
-include_directories(asio/include)
+
+# message(STATUS "DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asio/include)
 
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})
