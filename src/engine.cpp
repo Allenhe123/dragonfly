@@ -50,7 +50,7 @@ void Engine::Init() {
 
                 this->functor_(this->args_, this->output_);
 
-                PushToChildren();
+                this->PushToChildren();
             }
          }));
     }
@@ -161,10 +161,14 @@ void Engine::Dump() const noexcept {
 
 void Engine::InitPublisher() {
     if (!publishers_.empty()) {
-            for (const auto& p : publishers_)
-            publisher_proxys_.emplace_back(new PublisherProxy(io_context_, p->remote_ip, 
+        for (const auto& p : publishers_) {
+            publisher_proxys_.emplace_back(new PublisherProxy(io_context_pub_, p->remote_ip, 
                 p->remote_port, p->remote_queue_idx));
+            publish_threads_.push_back(std::thread( [this] () { this->io_context_pub_.run(); }));
         }
     }
+}
+
+
 
 }

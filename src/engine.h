@@ -19,6 +19,7 @@ each out corressponding to a child,
 
 #include "multitype_queue.h"
 #include "publisher_proxy.h"
+#include "subscribe_proxy.h"
 
 namespace df {
 
@@ -114,10 +115,15 @@ protected:
     TaskVec args_;
     TaskVec output_;
 
-    uint64_t notify_time_ =0 ;
+    uint64_t notify_time_ =0;
 
-    asio::io_context io_context_;
+    asio::io_context io_context_pub_;
     std::vector<std::shared_ptr<PublisherProxy>> publisher_proxys_;
+    std::vector<std::thread> publish_threads_;
+
+    asio::io_context io_context_sub_;
+    std::vector<std::shared_ptr<SubscribeProxy>> subscribe_proxys_;
+    std::vector<std::thread> subscribe_threads_;
 };
 
 }
