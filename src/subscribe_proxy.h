@@ -6,25 +6,19 @@
 #include <chrono>
 #include <thread>
 #include "asio.hpp"
+#include "msg.h"
+#include "msg.pb.h"
+
 
 using asio::ip::tcp;
-
-// struct Msg {
-//     Msg(char* p, size_t l): data_(p), len_(l) {}
-//     char* data_ = nullptr;
-//     size_t len_ = 0;
-// };
-
-// using MsgQueue = std::deque<Msg>;
 
 class Session : public std::enable_shared_from_this<Session> {
 public:
     Session(tcp::socket socket): socket_(std::move(socket)) {
-        
     }
 
     void start() {
-        do_read();
+        do_read_header();
     }
 
     void close() {
@@ -32,38 +26,55 @@ public:
     }
 
 private:
-
-    void do_read()
+    void do_read_header()
     {
         auto self(shared_from_this());
-        socket_.async_read_some(asio::buffer(data_, max_length),
-        [this, self](std::error_code ec, std::size_t length)
-        {
-            if (!ec)
+        asio::async_read(socket_, asio::buffer(read_msg_.data(), df::Msg::header_length),
+            [this, self](std::error_code ec, std::size_t size)
             {
-                printf("recv len:%lu, msg: %s\n", length, data_);
-            } 
+                if (!ec && read_msg_.decode_header())
+                {
+                    printf("size: %d, type:%d\n", read_msg_.body_length(), read_msg_.type());
+                    do_read_body();
+                }
+                else {
+                    printf("do_read_header failed\n");
+                }
+            });
+    }
 
-            do_read();
-        });
+    void do_read_body()
+    {
+        auto self(shared_from_this());
+        asio::async_read(socket_, asio::buffer(read_msg_.body(), read_msg_.body_length()),
+            [this, self](std::error_code ec, std::size_t size)
+            {
+                if (!ec) {
+                    DeSerialize();
+                    do_read_header();
+                }
+                else {
+                    printf("do_read_body failed\n");
+                }
+            });
+    }
 
-        // auto self(shared_from_this());
-        // asio::async_read(socket_, asio::buffer(data, 1024), [this, self](std::error_code ec, std::size_t /*length*/) 
-        // {
-        //     if (!ec) {
-        //         std::cout << "read msg: " << data << std::endl;
-        //     }
-        //     else
-        //     {
-        //         do_read();
-        //     }
-        // });
+private:
+    void DeSerialize() {
+        if (read_msg_.type() == df::Msg::MsgType::MSG_TYPE_TEST) {
+            MsgTest msg;
+            msg.ParseFromArray(read_msg_.body(), read_msg_.body_length());
+            std::ostringstream oss;
+            oss << msg.id() << " " << msg.data() << " " << msg.timestamp();
+            printf("recv: %s\n", oss.str().c_str());
+        }
     }
 
 private:
     tcp::socket socket_;
     enum { max_length = 1024 };
     char data_[max_length];
+    df::Msg read_msg_;
 };
 
 class SubscribeProxy {

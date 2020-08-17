@@ -28,13 +28,15 @@ include_directories(${CMAKE_BINARY_DIR}/config)
 # message(STATUS "DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asio/include)
 
+include_directories(${CMAKE_BINARY_DIR}/src/proto)
+
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_executable(asio-test asio_test.cc)
 add_executable(publish publish.cc)
 add_executable(subscribe subscribe.cc)
 
-target_link_libraries(asio-test pthread ${Protobuf_LIBRARIES} df_proto ${GTEST_LIBRARIES})
-target_link_libraries(publish pthread ${Protobuf_LIBRARIES} df_proto ${GTEST_LIBRARIES})
-target_link_libraries(subscribe pthread ${Protobuf_LIBRARIES} df_proto ${GTEST_LIBRARIES})
+target_link_libraries(asio-test pthread ${Protobuf_LIBRARIES} df_proto msg_proto ${GTEST_LIBRARIES})
+target_link_libraries(publish pthread ${Protobuf_LIBRARIES} df_proto msg_proto ${GTEST_LIBRARIES})
+target_link_libraries(subscribe pthread ${Protobuf_LIBRARIES} df_proto msg_proto ${GTEST_LIBRARIES})
 
 install(TARGETS asio-test DESTINATION ${CMAKE_INSTALL_LIBDIR})

@@ -5,6 +5,8 @@ project(sample)
 #include_directories(${CMAKE_CURRENT_BINARY_DIR})
 #message(STATUS "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
+include_directories(${CMAKE_BINARY_DIR}/src/proto)
+
 add_executable(sample sample.cpp)
 target_link_libraries(sample df profiler)
 

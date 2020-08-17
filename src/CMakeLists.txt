@@ -15,13 +15,16 @@ else()
     link_directories(${PROTOBUF_LIB_DIR})
 endif (NOT Protobuf_FOUND)
 
+add_subdirectory(proto)
+
 include_directories(${CMAKE_BINARY_DIR}/config)
+include_directories(${CMAKE_BINARY_DIR}/src/proto)
 
 # message(STATUS "DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/asio/include)
 
 AUX_SOURCE_DIRECTORY(. DIR_SRCS)
 add_library(df SHARED ${DIR_SRCS})
-target_link_libraries(df pthread ${Protobuf_LIBRARIES} df_proto)
+target_link_libraries(df pthread ${Protobuf_LIBRARIES} df_proto msg_proto)
 
 install(TARGETS df DESTINATION ${CMAKE_INSTALL_LIBDIR})

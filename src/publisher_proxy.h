@@ -7,16 +7,10 @@
 #include <thread>
 #include <mutex>
 #include "asio.hpp"
+#include "msg.h"
 
 using asio::ip::tcp;
-
-struct Msg {
-    Msg(std::shared_ptr<char []> p, size_t l): data_(p), len_(l) {}
-    std::shared_ptr<char []> data_ = nullptr;
-    size_t len_ = 0;
-};
-
-using MsgQueue = std::deque<Msg>;
+using MsgQueue = std::deque<std::shared_ptr<df::Msg>>;
 
 class PublisherProxy {
 public:
@@ -30,37 +24,18 @@ public:
         }
 
     ~PublisherProxy() { socket_.close(); }
-
-
-    void Test() {
-    asio::post(io_context_, []() {
-        printf("++++++++++++++\n");        
-    });
-    }
     
-    void Write(std::shared_ptr<char []> p, size_t length) {
-        asio::post(io_context_, [this, p, length]() {
-            printf("post call back...\n");
+    void Write(std::shared_ptr<df::Msg> msg) {
+        asio::post(io_context_, [this, msg]() {
             bool write_in_progress = !msg_queue_.empty();
-            Msg msg(p, length);
             msg_queue_.push_back(msg);
+
             if (!write_in_progress)
             {
+                printf("+++++++call do_write\n");
                 do_write();
             }
         });
-
-
-        // bool call_do_write = false;
-        // if (msg_queue_.empty())  call_do_write = true;
-        // {
-        //     std::lock_guard<std::mutex> lk(mutex_);
-        //     msg_queue_.emplace_back(p, length);
-        //     printf("### qsize:%d\n", msg_queue_.size());
-        // }
-        
-        // if (call_do_write) do_write();
-
     }
 
     void Close()
@@ -89,15 +64,14 @@ private:
 
     void do_write()
     {
-        printf("call do_write....\n");
-    asio::async_write(socket_, asio::buffer(msg_queue_.front().data_.get(), msg_queue_.front().len_),
-        [this](std::error_code ec, std::size_t /*length*/) {
+        asio::async_write(socket_, asio::buffer(msg_queue_.front()->data(), msg_queue_.front()->length()),
+        [this](std::error_code ec, std::size_t size) {
           if (!ec)
           {
             msg_queue_.pop_front();
             if (!msg_queue_.empty())
             {
-              do_write();
+               do_write();
             }
           }
           else
@@ -114,26 +88,6 @@ private:
 将第二个buffer的数据先发送出去。
 因此，NEVER start your second async_write before the first has completed.
 */
-    // void do_write()
-    // {  
-    //     if (!msg_queue_.empty()) {
-    //         printf("call asyn write,.......\n");
-    //         asio::async_write(socket_, asio::buffer(msg_queue_.front().data_.get(), msg_queue_.front().len_),
-    //         [this](std::error_code ec, std::size_t len) {
-    //             if (!ec) {
-    //                 {
-    //                     std::lock_guard<std::mutex> lk(mutex_);
-    //                     msg_queue_.pop_front();
-    //                     printf("async write success, size: %d \n", msg_queue_.size());
-    //                 }
-    //                 do_write();
-    //             } else {
-    //                 std::this_thread::sleep_for(std::chrono::microseconds(1));
-    //                 do_write();
-    //             }
-    //         });
-    //     }
-    // }
 
 private:
     asio::io_context& io_context_;
