@@ -8,6 +8,7 @@
 #include "asio.hpp"
 #include "msg.h"
 #include "msg.pb.h"
+#include "time.h"
 
 
 using asio::ip::tcp;
@@ -29,7 +30,7 @@ private:
     void do_read_header()
     {
         auto self(shared_from_this());
-        asio::async_read(socket_, asio::buffer(read_msg_.data(), df::Msg::header_length),
+        asio::async_read(socket_, asio::buffer(read_msg_.data(), df::Msg::header_length + df::Msg::type_length),
             [this, self](std::error_code ec, std::size_t size)
             {
                 if (!ec && read_msg_.decode_header())
@@ -66,7 +67,8 @@ private:
             msg.ParseFromArray(read_msg_.body(), read_msg_.body_length());
             std::ostringstream oss;
             oss << msg.id() << " " << msg.data() << " " << msg.timestamp();
-            printf("recv: %s\n", oss.str().c_str());
+            auto delta = (df::DfTime::Now() - msg.timestamp()) / 1000.0f;
+            printf("recv: %s, delta: %f us\n", oss.str().c_str(), delta);
         }
     }
 

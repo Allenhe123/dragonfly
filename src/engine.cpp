@@ -2,24 +2,16 @@
 
 #include <cstdio>
 #include <cstring>
-#include <sched.h>
-#include <unistd.h>
-#include <sys/resource.h>
-#include <sys/syscall.h>
 #include <cassert>
 #include <sstream>
 
+#include <sys/syscall.h>
+
 #include "common.h"
+#include "time.h"
 #include "pin_thread.h"
 
 namespace df {
-    uint64_t Now() {
-    auto now  = std::chrono::high_resolution_clock::now();
-    auto nano_time_pt = std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
-    auto epoch = nano_time_pt.time_since_epoch();
-    uint64_t now_nano = std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count();
-    return now_nano;
-}
 
 Engine::Engine(int id, int threadnum, int inputSize, int outputSize): inQueue_(inputSize),
     input_num_(inputSize), output_num_(outputSize), id_(id) {
@@ -86,7 +78,7 @@ void Engine::Stop() noexcept {
 }
 
 void Engine::NotifyOne() {
-    notify_time_ = Now();
+    notify_time_ = df::DfTime::Now();
     cv_.notify_one();
 }
 

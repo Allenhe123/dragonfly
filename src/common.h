@@ -108,4 +108,5 @@ typename std::enable_if<!HasShutdown<T>::value>::type CallShutdown(
 
 extern bool file_exist(const std::string& file_name);
 
+
 #endif

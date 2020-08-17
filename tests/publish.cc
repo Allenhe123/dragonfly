@@ -19,7 +19,7 @@ TEST (TestPub, SyncPub) {
     {
         MsgTest msgTest;
         msgTest.set_id(i);
-        msgTest.set_timestamp(df::Now());
+        msgTest.set_timestamp(df::DfTime::Now());
         std::ostringstream oss;
         oss << "sync hello server, " << i << " times";
         msgTest.set_data(oss.str());
@@ -47,13 +47,13 @@ TEST (TestPub, AsyncPub) {
 
         MsgTest msgTest;
         msgTest.set_id(i);
-        msgTest.set_timestamp(df::Now());
+        msgTest.set_timestamp(df::DfTime::Now());
         std::ostringstream oss;
         oss << "async hello server, " << i << " times";
         msgTest.set_data(oss.str());
 
         auto msg = std::make_shared<df::Msg>(df::Msg::MsgType::MSG_TYPE_TEST);
-        msg->set_body_length(oss.str().size());
+        msg->set_body_length(msgTest.ByteSizeLong());
         msg->encode_header();
         msgTest.SerializeToArray(msg->body(), msgTest.ByteSizeLong());
         proxy_pub.Write(msg);
