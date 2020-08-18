@@ -40,7 +40,8 @@ TEST (TestPub, AsyncPub) {
         context_pub.run();
     });
 
-    // add below line, post will not called
+    // 只要该线程调用了sleep相关操作，异步调用就不会被触发，因为io_context触发异步
+    // 调用时，该线程sleep了，完美错过！
     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (size_t i=0; i<10; i++) {
