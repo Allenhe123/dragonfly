@@ -48,8 +48,6 @@ TEST (ASIO_TEST, Test_Timer2) {
     io_context.run();
 }
 
-
-
 void print(asio::steady_timer* t, int* count) {
     if (*count < 5) {
         std::cout << "cnt: " << *count << std::endl;
@@ -98,6 +96,112 @@ TEST (ASIO_TEST, Test_Handler2) {
     asio::io_context io;
     Printer p(io);
     io.run();
+}
+
+// Synchronising handlers in multithreaded programs
+TEST (ASIO_TEST, Test_Handler3) {
+    class Printer {
+    public:
+        Printer(asio::io_context& io): strand_(asio::make_strand(io)), 
+            timer1_(io, asio::chrono::seconds(1)), timer2_(io, asio::chrono::seconds(1)),
+            count_(0) {
+                timer1_.async_wait(asio::bind_executor(strand_, std::bind(&Printer::Print1, this)));
+                timer2_.async_wait(asio::bind_executor(strand_, std::bind(&Printer::Print2, this)));
+            }
+        ~Printer() {
+            std::cout << "Final count is " << count_ << std::endl;
+        }
+
+        void Print1() {
+            if (count_ < 10)
+            {
+                std::cout << "Timer 1: " << count_ << std::endl;
+                ++count_;
+
+                timer1_.expires_at(timer1_.expiry() + asio::chrono::seconds(1));
+
+                timer1_.async_wait(asio::bind_executor(strand_,
+                        std::bind(&Printer::Print1, this)));
+            }
+        }
+        void Print2() {
+            if (count_ < 10)
+            {
+                std::cout << "Timer 2: " << count_ << std::endl;
+                ++count_;
+
+                timer2_.expires_at(timer2_.expiry() + asio::chrono::seconds(1));
+
+                timer2_.async_wait(asio::bind_executor(strand_,
+                        std::bind(&Printer::Print2, this)));
+            }
+        }
+
+    private:
+        asio::strand<asio::io_context::executor_type> strand_;
+        asio::steady_timer timer1_;
+        asio::steady_timer timer2_;
+        int count_;
+    };
+
+
+    asio::io_context io;
+    Printer p(io);
+    // std::thread t(std::bind(&asio::io_context::run, &io));
+    std::thread t([&io]() {
+        io.run();
+    });
+    io.run();
+    t.join();
+}
+
+// sync client
+TEST (ASIO_TEST, Test_TCP1) {
+    using asio::ip::tcp;
+    asio::io_context io_context;
+    tcp::resolver resolver(io_context);
+    tcp::resolver::results_type endpoints = resolver.resolve("127.0.0.1", "daytime");
+    tcp::socket socket(io_context);
+    asio::connect(socket, endpoints);
+    for (;;)
+    {
+        std::array<char, 128> buf;
+        asio::error_code error;
+        size_t len = socket.read_some(asio::buffer(buf), error);
+        if (error == asio::error::eof)
+            break; // Connection closed cleanly by peer.
+        else if (error)
+            throw asio::system_error(error); // Some other error.
+        std::cout.write(buf.data(), len);
+    }
+}
+
+// sync daytime server
+std::string make_daytime_string()
+{
+    using namespace std; // For time_t, time and ctime;
+    time_t now = time(0);
+    return ctime(&now);
+}
+TEST (ASIO_TEST, Test_TCP2) {
+    using asio::ip::tcp;
+    asio::io_context io_context;
+    tcp::acceptor acceptor(io_context, tcp::endpoint(tcp::v4(), 13));
+    for (;;)
+    {
+        tcp::socket socket(io_context);
+        acceptor.accept(socket); 
+        std::string message = make_daytime_string();
+        asio::error_code ignored_error;
+        asio::write(socket, asio::buffer(message), ignored_error);
+    }
+}
+
+// asynchronous TCP daytime server
+TEST (ASIO_TEST, Test_TCP3) {
+    using asio::ip::tcp;
+    asio::io_context io_context;
+
 }
 
 int main(int argc, char** argv) {
